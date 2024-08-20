@@ -6,7 +6,7 @@ import {
   CreatingInferenceServiceObject,
   CreatingServingRuntimeObject,
 } from '~/pages/modelServing/screens/types';
-import SimpleDropdownSelect from '~/components/SimpleDropdownSelect';
+import SimpleSelect from '~/components/SimpleSelect';
 import { fetchNIMModelNames, ModelInfo } from '~/pages/modelServing/screens/projects/utils';
 
 type NIMModelListSectionProps = {
@@ -61,7 +61,7 @@ const NIMModelListSection: React.FC<NIMModelListSectionProps> = ({
 
   return (
     <FormGroup label="NIM model name" fieldId="nim-model-list-selection" isRequired>
-      <SimpleDropdownSelect
+      <SimpleSelect
         isFullWidth
         isDisabled={isEditing}
         id="nim-model-list-selection"
