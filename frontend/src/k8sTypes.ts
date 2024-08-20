@@ -24,6 +24,8 @@ export enum KnownLabels {
   DATA_CONNECTION_AWS = 'opendatahub.io/managed',
   LABEL_SELECTOR_MODEL_REGISTRY = 'component=model-registry',
   PROJECT_SUBJECT = 'opendatahub.io/rb-project-subject',
+  REGISTERED_MODEL_ID = 'modelregistry.opendatahub.io/registered-model-id',
+  MODEL_VERSION_ID = 'modelregistry.opendatahub.io/model-version-id',
 }
 
 export type K8sVerb =
@@ -1281,8 +1283,6 @@ export type DashboardCommonConfig = {
   disableAcceleratorProfiles: boolean;
   // TODO Temp feature flag - remove with https://issues.redhat.com/browse/RHOAIENG-3826
   disablePipelineExperiments: boolean;
-  disableS3Endpoint: boolean;
-  disableArtifactsAPI: boolean;
   disableDistributedWorkloads: boolean;
   disableModelRegistry: boolean;
   disableConnectionTypes: boolean;

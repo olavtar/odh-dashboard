@@ -2,33 +2,37 @@ import { mockDataConnection } from '~/__mocks__/mockDataConnection';
 import { mockProjectK8sResource } from '~/__mocks__/mockProjectK8sResource';
 import {
   filterOutConnectionsWithoutBucket,
+  getCreateInferenceServiceLabels,
   getProjectModelServingPlatform,
   getUrlFromKserveInferenceService,
 } from '~/pages/modelServing/screens/projects/utils';
-import { DataConnection } from '~/pages/projects/types';
-import { ServingPlatformStatuses } from '~/pages/modelServing/screens/types';
+import { LabeledDataConnection, ServingPlatformStatuses } from '~/pages/modelServing/screens/types';
 import { ServingRuntimePlatform } from '~/types';
 import { mockInferenceServiceK8sResource } from '~/__mocks__/mockInferenceServiceK8sResource';
 
 describe('filterOutConnectionsWithoutBucket', () => {
   it('should return an empty array if input connections array is empty', () => {
-    const inputConnections: DataConnection[] = [];
+    const inputConnections: LabeledDataConnection[] = [];
     const result = filterOutConnectionsWithoutBucket(inputConnections);
     expect(result).toEqual([]);
   });
 
   it('should filter out connections without an AWS_S3_BUCKET property', () => {
     const dataConnections = [
-      mockDataConnection({ name: 'name1', s3Bucket: 'bucket1' }),
-      mockDataConnection({ name: 'name2', s3Bucket: '' }),
-      mockDataConnection({ name: 'name3', s3Bucket: 'bucket2' }),
+      { dataConnection: mockDataConnection({ name: 'name1', s3Bucket: 'bucket1' }) },
+      { dataConnection: mockDataConnection({ name: 'name2', s3Bucket: '' }) },
+      { dataConnection: mockDataConnection({ name: 'name3', s3Bucket: 'bucket2' }) },
     ];
 
     const result = filterOutConnectionsWithoutBucket(dataConnections);
 
     expect(result).toMatchObject([
-      { data: { data: { Name: 'name1' } } },
-      { data: { data: { Name: 'name3' } } },
+      {
+        dataConnection: { data: { data: { Name: 'name1' } } },
+      },
+      {
+        dataConnection: { data: { data: { Name: 'name3' } } },
+      },
     ]);
   });
 });
@@ -149,5 +153,52 @@ describe('getUrlsFromKserveInferenceService', () => {
       url,
     });
     expect(getUrlFromKserveInferenceService(inferenceService)).toBeUndefined();
+  });
+});
+
+describe('getCreateInferenceServiceLabels', () => {
+  it('returns undefined when "registeredModelId" and "modelVersionId" are undefined', () => {
+    const createLabels = getCreateInferenceServiceLabels({
+      registeredModelId: undefined,
+      modelVersionId: undefined,
+    });
+    expect(createLabels).toBeUndefined();
+  });
+
+  it('returns labels with "registered-model-id" when "registeredModelId" is defined', () => {
+    const createLabels = getCreateInferenceServiceLabels({
+      registeredModelId: 'some-register-model-id',
+      modelVersionId: undefined,
+    });
+    expect(createLabels).toEqual({
+      labels: {
+        'modelregistry.opendatahub.io/registered-model-id': 'some-register-model-id',
+      },
+    });
+  });
+
+  it('returns labels with "model-version-id" when "modelVersionId" is defined', () => {
+    const createLabels = getCreateInferenceServiceLabels({
+      registeredModelId: undefined,
+      modelVersionId: 'some-model-version-id',
+    });
+    expect(createLabels).toEqual({
+      labels: {
+        'modelregistry.opendatahub.io/model-version-id': 'some-model-version-id',
+      },
+    });
+  });
+
+  it('returns labels with "registered-model-id" and "model-version-id" when registeredModelId and "modelVersionId" are defined', () => {
+    const createLabels = getCreateInferenceServiceLabels({
+      registeredModelId: 'some-register-model-id',
+      modelVersionId: 'some-model-version-id',
+    });
+    expect(createLabels).toEqual({
+      labels: {
+        'modelregistry.opendatahub.io/model-version-id': 'some-model-version-id',
+        'modelregistry.opendatahub.io/registered-model-id': 'some-register-model-id',
+      },
+    });
   });
 });

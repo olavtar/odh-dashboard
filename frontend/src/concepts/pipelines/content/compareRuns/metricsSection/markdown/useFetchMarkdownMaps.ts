@@ -1,14 +1,12 @@
 import React from 'react';
 import { RunArtifact } from '~/concepts/pipelines/apiHooks/mlmd/types';
-import { extractS3UriComponents } from '~/concepts/pipelines/content/artifacts/utils';
+import { useArtifactStorage } from '~/concepts/pipelines/apiHooks/useArtifactStorage';
 import { MarkdownAndTitle } from '~/concepts/pipelines/content/compareRuns/metricsSection/markdown/MarkdownCompare';
 import {
   getFullArtifactPathLabel,
   getFullArtifactPaths,
 } from '~/concepts/pipelines/content/compareRuns/metricsSection/utils';
-import { usePipelinesAPI } from '~/concepts/pipelines/context';
 import { PipelineRunKFv2 } from '~/concepts/pipelines/kfTypes';
-import { fetchStorageObject, fetchStorageObjectSize } from '~/services/storageService';
 import { allSettledPromises } from '~/utilities/allSettledPromises';
 
 const useFetchMarkdownMaps = (
@@ -18,8 +16,9 @@ const useFetchMarkdownMaps = (
   runMap: Record<string, PipelineRunKFv2>;
   configsLoaded: boolean;
 } => {
-  const { namespace } = usePipelinesAPI();
   const [configsLoaded, setConfigsLoaded] = React.useState(false);
+  const { getStorageObjectUrl } = useArtifactStorage();
+
   const [configMapBuilder, setConfigMapBuilder] = React.useState<
     Record<string, MarkdownAndTitle[]>
   >({});
@@ -39,22 +38,19 @@ const useFetchMarkdownMaps = (
         .filter((path) => !!path.linkedArtifact.artifact.getUri())
         .map(async (path) => {
           const { run } = path;
-          const uriComponents = extractS3UriComponents(path.linkedArtifact.artifact.getUri());
-          if (!uriComponents) {
-            return null;
-          }
-          const sizeBytes = await fetchStorageObjectSize(namespace, uriComponents.path).catch(
+          let sizeBytes: number | undefined;
+
+          const url = await getStorageObjectUrl(path.linkedArtifact.artifact).catch(
             () => undefined,
           );
-          const text = await fetchStorageObject(namespace, uriComponents.path).catch(() => null);
 
-          if (text === null) {
+          if (url === undefined) {
             return null;
           }
-
-          return { run, sizeBytes, text, path };
+          return { run, sizeBytes, url, path };
         }),
-    [fullArtifactPaths, namespace],
+
+    [fullArtifactPaths, getStorageObjectUrl],
   );
 
   React.useEffect(() => {
@@ -65,12 +61,12 @@ const useFetchMarkdownMaps = (
     allSettledPromises(fetchStorageObjectPromises).then(([successes]) => {
       successes.forEach((result) => {
         if (result.value) {
-          const { text, sizeBytes, run, path } = result.value;
+          const { url, sizeBytes, run, path } = result.value;
           setRunMapBuilder((runMap) => ({ ...runMap, [run.run_id]: run }));
 
           const config = {
             title: getFullArtifactPathLabel(path),
-            config: text,
+            config: url,
             fileSize: sizeBytes,
           };
 

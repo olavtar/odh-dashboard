@@ -8,19 +8,16 @@ import {
   ServingRuntimeKind,
   PersistentVolumeClaimKind,
 } from '~/k8sTypes';
-import {
-  DataConnection,
-  NamespaceApplicationCase,
-  UpdateObjectAtPropAndValue,
-} from '~/pages/projects/types';
+import { NamespaceApplicationCase, UpdateObjectAtPropAndValue } from '~/pages/projects/types';
 import useGenericObjectState from '~/utilities/useGenericObjectState';
 import {
   CreatingInferenceServiceObject,
   CreatingServingRuntimeObject,
   InferenceServiceStorageType,
-  ModelServingSize,
   ServingPlatformStatuses,
   ServingRuntimeEditInfo,
+  ModelServingSize,
+  LabeledDataConnection,
 } from '~/pages/modelServing/screens/types';
 import { ServingRuntimePlatform } from '~/types';
 import { DEFAULT_MODEL_SERVER_SIZES } from '~/pages/modelServing/screens/const';
@@ -50,6 +47,7 @@ import {
 } from '~/api';
 import { isDataConnectionAWS } from '~/pages/projects/screens/detail/data-connections/utils';
 import { removeLeadingSlash } from '~/utilities/string';
+import { RegisteredModelDeployInfo } from '~/pages/modelRegistry/screens/RegisteredModels/useRegisteredModelDeployInfo';
 
 const NIM_NAMESPACE = 'redhat-ods-applications';
 const NIM_CONFIGMAP_NAME = 'nvidia-nim-images-data';
@@ -552,10 +550,12 @@ export const isUrlInternalService = (url: string | undefined): boolean =>
   url !== undefined && url.endsWith('.svc.cluster.local');
 
 export const filterOutConnectionsWithoutBucket = (
-  connections: DataConnection[],
-): DataConnection[] =>
+  connections: LabeledDataConnection[],
+): LabeledDataConnection[] =>
   connections.filter(
-    (obj) => isDataConnectionAWS(obj) && obj.data.data.AWS_S3_BUCKET.trim() !== '',
+    (obj) =>
+      isDataConnectionAWS(obj.dataConnection) &&
+      obj.dataConnection.data.data.AWS_S3_BUCKET.trim() !== '',
   );
 
 export interface ModelInfo {
@@ -645,3 +645,23 @@ export const createNIMPVC = (
       dryRun,
     },
   );
+export const getCreateInferenceServiceLabels = (
+  data: Pick<RegisteredModelDeployInfo, 'registeredModelId' | 'modelVersionId'> | undefined,
+): { labels: Record<string, string> } | undefined => {
+  if (data?.registeredModelId || data?.modelVersionId) {
+    const { registeredModelId, modelVersionId } = data;
+
+    return {
+      labels: {
+        ...(registeredModelId && {
+          'modelregistry.opendatahub.io/registered-model-id': registeredModelId,
+        }),
+        ...(modelVersionId && {
+          'modelregistry.opendatahub.io/model-version-id': modelVersionId,
+        }),
+      },
+    };
+  }
+
+  return undefined;
+};

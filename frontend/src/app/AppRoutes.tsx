@@ -14,6 +14,7 @@ import { useCheckJupyterEnabled } from '~/utilities/notebookControllerUtils';
 import { SupportedArea } from '~/concepts/areas';
 import useIsAreaAvailable from '~/concepts/areas/useIsAreaAvailable';
 import ModelRegistrySettingsRoutes from '~/pages/modelRegistrySettings/ModelRegistrySettingsRoutes';
+import ConnectionTypeRoutes from '~/pages/connectionTypes/ConnectionTypeRoutes';
 
 const HomePage = React.lazy(() => import('../pages/home/Home'));
 
@@ -69,6 +70,7 @@ const AppRoutes: React.FC = () => {
   const { isAdmin, isAllowed } = useUser();
   const isJupyterEnabled = useCheckJupyterEnabled();
   const isHomeAvailable = useIsAreaAvailable(SupportedArea.HOME).status;
+  const isConnectionTypesAvailable = useIsAreaAvailable(SupportedArea.CONNECTION_TYPES).status;
 
   if (!isAllowed) {
     return (
@@ -123,6 +125,9 @@ const AppRoutes: React.FC = () => {
             <Route path="/clusterSettings" element={<ClusterSettingsPage />} />
             <Route path="/acceleratorProfiles/*" element={<AcceleratorProfileRoutes />} />
             <Route path="/servingRuntimes/*" element={<CustomServingRuntimeRoutes />} />
+            {isConnectionTypesAvailable ? (
+              <Route path="/connectionTypes/*" element={<ConnectionTypeRoutes />} />
+            ) : null}
             <Route path="/modelRegistrySettings/*" element={<ModelRegistrySettingsRoutes />} />
             <Route path="/groupSettings" element={<GroupSettingsPage />} />
           </>

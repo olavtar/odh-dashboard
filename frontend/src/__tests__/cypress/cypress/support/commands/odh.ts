@@ -50,6 +50,8 @@ import type {
 } from '~/concepts/pipelines/kfTypes';
 import type { GrpcResponse } from '~/__mocks__/mlmd/utils';
 import type { BuildMockPipelinveVersionsType } from '~/__mocks__';
+import type { ArtifactStorage } from '~/concepts/pipelines/types';
+import type { ConnectionTypeConfigMap } from '~/concepts/connectionTypes/types';
 
 type SuccessErrorResponse = {
   success: boolean;
@@ -567,20 +569,46 @@ declare global {
           response: OdhResponse<{ notebook: NotebookKind; isRunning: boolean }>,
         ) => Cypress.Chainable<null>) &
         ((
-          type: 'GET /api/storage/:namespace',
+          type: 'GET /api/service/pipelines/:namespace/:serviceName/apis/v2beta1/artifacts/:artifactId',
           options: {
-            query: { key: string; peek?: number };
-            path: { namespace: string };
+            query: { view: string };
+            path: { namespace: string; serviceName: string; artifactId: string };
           },
-          response: OdhResponse<string>,
+          response: OdhResponse<ArtifactStorage>,
         ) => Cypress.Chainable<null>) &
         ((
-          type: 'GET /api/storage/:namespace/size',
+          type: 'GET /api/connection-types',
+          response: OdhResponse<ConnectionTypeConfigMap[]>,
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'PATCH /api/connection-types/:name',
           options: {
-            query: { key: string };
-            path: { namespace: string };
+            path: { name: string };
           },
-          response: OdhResponse<number>,
+          response: OdhResponse<SuccessErrorResponse>,
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'GET /api/connection-types/:name',
+          options: {
+            path: { name: string };
+          },
+          response: OdhResponse<ConnectionTypeConfigMap>,
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'GET /api/connection-types',
+          response: ConnectionTypeConfigMap[],
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'DELETE /api/connection-types/:name',
+          options: { path: { name: string } },
+          response: OdhResponse<SuccessErrorResponse>,
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'PATCH /api/connection-types/:name',
+          options: {
+            path: { name: string };
+          },
+          response: SuccessErrorResponse,
         ) => Cypress.Chainable<null>);
     }
   }

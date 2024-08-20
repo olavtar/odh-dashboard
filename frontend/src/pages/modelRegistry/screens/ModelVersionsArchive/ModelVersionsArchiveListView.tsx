@@ -10,7 +10,7 @@ import {
 import { FilterIcon } from '@patternfly/react-icons';
 import { SearchType } from '~/concepts/dashboard/DashboardSearchField';
 import { ModelVersion } from '~/concepts/modelRegistry/types';
-import SimpleDropdownSelect from '~/components/SimpleDropdownSelect';
+import SimpleSelect from '~/components/SimpleSelect';
 import { filterModelVersions } from '~/pages/modelRegistry/screens/utils';
 import EmptyModelRegistryState from '~/pages/modelRegistry/screens/components/EmptyModelRegistryState';
 import { asEnumMember } from '~/utilities/utils';
@@ -28,7 +28,7 @@ const ModelVersionsArchiveListView: React.FC<ModelVersionsArchiveListViewProps> 
   const [searchType, setSearchType] = React.useState<SearchType>(SearchType.KEYWORD);
   const [search, setSearch] = React.useState('');
 
-  const searchTypes = [SearchType.KEYWORD, SearchType.OWNER];
+  const searchTypes = [SearchType.KEYWORD, SearchType.AUTHOR];
 
   const filteredModelVersions = filterModelVersions(unfilteredmodelVersions, search, searchType);
 
@@ -57,7 +57,7 @@ const ModelVersionsArchiveListView: React.FC<ModelVersionsArchiveListViewProps> 
                 deleteChipGroup={() => setSearch('')}
                 categoryName="Keyword"
               >
-                <SimpleDropdownSelect
+                <SimpleSelect
                   options={searchTypes.map((key) => ({
                     key,
                     label: key,

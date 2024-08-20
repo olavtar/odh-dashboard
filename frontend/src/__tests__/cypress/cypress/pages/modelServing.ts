@@ -79,8 +79,8 @@ class ModelServingGlobal {
 }
 
 class InferenceServiceModal extends Modal {
-  constructor() {
-    super('Deploy model');
+  constructor(private edit = false) {
+    super(`${edit ? 'Edit' : 'Deploy'} model`);
   }
 
   findSubmitButton() {
@@ -92,11 +92,11 @@ class InferenceServiceModal extends Modal {
   }
 
   findServingRuntimeSelect() {
-    return this.find().find('#inference-service-model-selection');
+    return this.find().findByTestId('inference-service-model-selection');
   }
 
   findModelFrameworkSelect() {
-    return this.find().find('#inference-service-framework-selection');
+    return this.find().findByTestId('inference-service-framework-selection');
   }
 
   findExistingDataConnectionOption() {
@@ -121,6 +121,12 @@ class InferenceServiceModal extends Modal {
       .findByRole('button', { name: 'Options menu' });
   }
 
+  selectExistingConnectionSelectOptionByResourceName(name: string) {
+    this.findExistingConnectionSelect()
+      .findSelectOptionByTestId(`inference-service-data-connection ${name}`)
+      .click();
+  }
+
   findLocationNameInput() {
     return this.find().findByTestId('field Name');
   }
@@ -141,6 +147,10 @@ class InferenceServiceModal extends Modal {
     return this.find().findByTestId('field AWS_S3_BUCKET');
   }
 
+  findLocationRegionInput() {
+    return this.find().findByTestId('field AWS_DEFAULT_REGION');
+  }
+
   findLocationPathInput() {
     return this.find().findByTestId('folder-path');
   }
@@ -152,7 +162,7 @@ class InferenceServiceModal extends Modal {
 
 class ServingRuntimeModal extends Modal {
   constructor(private edit = false) {
-    super(edit ? 'Edit model server' : 'Add model server');
+    super(`${edit ? 'Edit' : 'Add'} model server`);
   }
 
   findSubmitButton() {
@@ -194,7 +204,7 @@ class ServingRuntimeModal extends Modal {
   findModelServerSizeSelect() {
     return this.find()
       .findByRole('group', { name: 'Compute resources per replica' })
-      .findByRole('button', { name: 'Options menu' });
+      .findByTestId('model-server-size-selection');
   }
 
   findModelServerReplicasMinusButton() {
@@ -212,7 +222,11 @@ class ServingRuntimeModal extends Modal {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 interface KServeModal extends ServingRuntimeModal, InferenceServiceModal {}
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class KServeModal extends InferenceServiceModal {}
+class KServeModal extends InferenceServiceModal {
+  constructor(private edit = false) {
+    super(edit);
+  }
+}
 mixin(KServeModal, [ServingRuntimeModal, InferenceServiceModal]);
 
 class ModelServingRow extends TableRow {
@@ -371,7 +385,9 @@ class ModelServingSection {
 
 export const modelServingGlobal = new ModelServingGlobal();
 export const inferenceServiceModal = new InferenceServiceModal();
+export const inferenceServiceModalEdit = new InferenceServiceModal(true);
 export const modelServingSection = new ModelServingSection();
 export const createServingRuntimeModal = new ServingRuntimeModal(false);
 export const editServingRuntimeModal = new ServingRuntimeModal(true);
 export const kserveModal = new KServeModal();
+export const kserveModalEdit = new KServeModal(true);

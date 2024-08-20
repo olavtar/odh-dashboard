@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { InputGroup, SearchInput, InputGroupItem } from '@patternfly/react-core';
-import SimpleDropdownSelect from '~/components/SimpleDropdownSelect';
+import SimpleSelect from '~/components/SimpleSelect';
 import { asEnumMember } from '~/utilities/utils';
 
 // List all the possible search fields here
@@ -18,6 +18,7 @@ export enum SearchType {
   PROVIDER = 'Provider',
   IDENTIFIER = 'Identifier',
   KEYWORD = 'Keyword',
+  AUTHOR = 'Author',
   OWNER = 'Owner',
 }
 
@@ -40,7 +41,7 @@ const DashboardSearchField: React.FC<DashboardSearchFieldProps> = ({
 }) => (
   <InputGroup data-testid="dashboard-table-toolbar">
     <InputGroupItem>
-      <SimpleDropdownSelect
+      <SimpleSelect
         aria-label="Filter type"
         dataTestId="filter-dropdown-select"
         options={types.map((key) => ({

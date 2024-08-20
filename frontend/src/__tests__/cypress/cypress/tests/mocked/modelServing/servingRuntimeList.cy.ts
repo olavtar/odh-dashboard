@@ -28,6 +28,7 @@ import {
   editServingRuntimeModal,
   inferenceServiceModal,
   kserveModal,
+  kserveModalEdit,
   modelServingSection,
 } from '~/__tests__/cypress/cypress/pages/modelServing';
 import { projectDetails } from '~/__tests__/cypress/cypress/pages/projects';
@@ -533,7 +534,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findSubmitButton().should('be.disabled');
       // check external route, token should be checked and no alert
@@ -613,7 +614,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findSubmitButton().should('be.disabled');
       // check external route, token should be checked and no alert
@@ -674,7 +675,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findExistingConnectionSelect().findSelectOption('Test Secret').click();
       kserveModal.findNewDataConnectionOption().click();
@@ -739,13 +740,13 @@ describe('Serving Runtime List', () => {
       // click on the toggle button and open edit model server
       modelServingSection.getKServeRow('Llama Service').find().findKebabAction('Edit').click();
 
-      kserveModal.shouldBeOpen();
+      kserveModalEdit.shouldBeOpen();
 
       // Submit button should be enabled
-      kserveModal.findSubmitButton().should('be.enabled');
+      kserveModalEdit.findSubmitButton().should('be.enabled');
       // Should allow editing
-      kserveModal.findSubmitButton().click();
-      kserveModal.shouldBeOpen(false);
+      kserveModalEdit.findSubmitButton().click();
+      kserveModalEdit.shouldBeOpen(false);
 
       //dry run request
       cy.wait('@updateServingRuntime').then((interception) => {
@@ -898,7 +899,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findSubmitButton().should('be.disabled');
       kserveModal.findExistingConnectionSelect().findSelectOption('Test Secret').click();
@@ -994,7 +995,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1156,7 +1157,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1213,7 +1214,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1266,7 +1267,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1329,7 +1330,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1405,7 +1406,7 @@ describe('Serving Runtime List', () => {
       createServingRuntimeModal.findModelServerNameInput().type('Test Name');
       createServingRuntimeModal
         .findServingRuntimeTemplateDropdown()
-        .findDropdownItem('New OVMS Server')
+        .findSelectOption('New OVMS Server')
         .click();
       createServingRuntimeModal.findSubmitButton().should('be.enabled');
 
@@ -1625,7 +1626,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findSubmitButton().should('be.disabled');
       kserveModal.findExistingConnectionSelect().findSelectOption('Test Secret').click();
@@ -1658,7 +1659,7 @@ describe('Serving Runtime List', () => {
 
       // test filling in minimum required fields
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
       kserveModal.findSubmitButton().should('be.disabled');
       kserveModal.findExistingConnectionSelect().findSelectOption('Test Secret').click();
@@ -1692,7 +1693,7 @@ describe('Serving Runtime List', () => {
       kserveModal.shouldBeOpen();
 
       kserveModal.findModelNameInput().type('Test Name');
-      kserveModal.findServingRuntimeTemplateDropdown().findDropdownItem('Caikit').click();
+      kserveModal.findServingRuntimeTemplateDropdown().findSelectOption('Caikit').click();
       kserveModal.findModelFrameworkSelect().findSelectOption('onnx - 1').click();
 
       kserveModal.findNewDataConnectionOption().click();
@@ -1786,9 +1787,9 @@ describe('Serving Runtime List', () => {
       // click on the toggle button and open edit model server
       kserveRow.find().findKebabAction('Edit').click();
 
-      kserveModal.shouldBeOpen();
+      kserveModalEdit.shouldBeOpen();
 
-      kserveModal.findModelServerSizeSelect().invoke('text').should('equal', 'Small');
+      kserveModalEdit.findModelServerSizeSelect().invoke('text').should('equal', 'Small');
     });
 
     it('Check model size rendered with InferenceService size', () => {
@@ -1836,9 +1837,9 @@ describe('Serving Runtime List', () => {
       // click on the toggle button and open edit model server
       kserveRow.find().findKebabAction('Edit').click();
 
-      kserveModal.shouldBeOpen();
+      kserveModalEdit.shouldBeOpen();
 
-      kserveModal.findModelServerSizeSelect().invoke('text').should('equal', 'Small');
+      kserveModalEdit.findModelServerSizeSelect().invoke('text').should('equal', 'Small');
     });
 
     it('Check model size rendered with InferenceService custom size', () => {
@@ -1887,9 +1888,9 @@ describe('Serving Runtime List', () => {
       // click on the toggle button and open edit model server
       modelServingSection.getKServeRow('Llama Service').find().findKebabAction('Edit').click();
 
-      kserveModal.shouldBeOpen();
+      kserveModalEdit.shouldBeOpen();
 
-      kserveModal.findModelServerSizeSelect().invoke('text').should('equal', 'Custom');
+      kserveModalEdit.findModelServerSizeSelect().invoke('text').should('equal', 'Custom');
     });
   });
 

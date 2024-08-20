@@ -66,7 +66,7 @@ class ModelRegistry {
 
   private wait() {
     cy.findByTestId('app-page-title').should('exist');
-    cy.findByTestId('app-page-title').contains('Registered models');
+    cy.findByTestId('app-page-title').contains('Model registry');
     cy.testA11y();
   }
 
@@ -79,6 +79,10 @@ class ModelRegistry {
     return this;
   }
 
+  findModelRegistryEmptyState() {
+    return cy.findByTestId('empty-model-registries-state');
+  }
+
   shouldregisteredModelsEmpty() {
     cy.findByTestId('empty-registered-models').should('exist');
   }
@@ -88,7 +92,7 @@ class ModelRegistry {
   }
 
   shouldModelRegistrySelectorExist() {
-    cy.get('#model-registry-selector-dropdown').should('exist');
+    cy.findByTestId('model-registry-selector-dropdown').should('exist');
   }
 
   shouldtableToolbarExist() {
@@ -138,6 +142,10 @@ class ModelRegistry {
 
   findRegisteredModelTableHeaderButton(name: string) {
     return this.findTable().find('thead').findByRole('button', { name });
+  }
+
+  findModelRegistry() {
+    return cy.findByTestId('model-registry-selector-dropdown');
   }
 
   findModelVersionsTableHeaderButton(name: string) {

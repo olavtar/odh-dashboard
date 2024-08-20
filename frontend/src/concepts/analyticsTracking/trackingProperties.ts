@@ -3,7 +3,9 @@ export type ODHSegmentKey = {
 };
 
 export type IdentifyEventProperties = {
+  isAdmin: boolean;
   anonymousID?: string;
+  canCreateProjects: boolean;
 };
 
 export const enum TrackingOutcome {

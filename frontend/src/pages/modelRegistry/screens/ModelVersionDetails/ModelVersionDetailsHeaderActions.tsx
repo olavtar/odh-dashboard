@@ -6,14 +6,20 @@ import { ModelRegistryContext } from '~/concepts/modelRegistry/context/ModelRegi
 import { ModelVersion, ModelState } from '~/concepts/modelRegistry/types';
 import { getPatchBodyForModelVersion } from '~/pages/modelRegistry/screens/utils';
 import { ModelRegistrySelectorContext } from '~/concepts/modelRegistry/context/ModelRegistrySelectorContext';
-import { modelVersionArchiveDetailsUrl } from '~/pages/modelRegistry/screens/routeUtils';
+import {
+  modelVersionArchiveDetailsUrl,
+  modelVersionDeploymentsUrl,
+} from '~/pages/modelRegistry/screens/routeUtils';
+import DeployRegisteredModelModal from '~/pages/modelRegistry/screens/components/DeployRegisteredModelModal';
 
 interface ModelVersionsDetailsHeaderActionsProps {
   mv: ModelVersion;
+  refresh: () => void;
 }
 
 const ModelVersionsDetailsHeaderActions: React.FC<ModelVersionsDetailsHeaderActionsProps> = ({
   mv,
+  refresh,
 }) => {
   const { apiState } = React.useContext(ModelRegistryContext);
   const { preferredModelRegistry } = React.useContext(ModelRegistrySelectorContext);
@@ -21,6 +27,7 @@ const ModelVersionsDetailsHeaderActions: React.FC<ModelVersionsDetailsHeaderActi
   const navigate = useNavigate();
   const [isOpenActionDropdown, setOpenActionDropdown] = React.useState(false);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = React.useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
   const tooltipRef = React.useRef<HTMLButtonElement>(null);
 
   return (
@@ -48,9 +55,8 @@ const ModelVersionsDetailsHeaderActions: React.FC<ModelVersionsDetailsHeaderActi
             id="deploy-button"
             aria-label="Deploy version"
             key="deploy-button"
-            onClick={() => undefined}
+            onClick={() => setIsDeployModalOpen(true)}
             ref={tooltipRef}
-            isDisabled // TODO This feature is currently disabled but will be enabled in a future PR post-summit release.
           >
             Deploy
           </DropdownItem>
@@ -65,6 +71,21 @@ const ModelVersionsDetailsHeaderActions: React.FC<ModelVersionsDetailsHeaderActi
           </DropdownItem>
         </DropdownList>
       </Dropdown>
+      <DeployRegisteredModelModal
+        onSubmit={() => {
+          refresh();
+          navigate(
+            modelVersionDeploymentsUrl(
+              mv.id,
+              mv.registeredModelId,
+              preferredModelRegistry?.metadata.name,
+            ),
+          );
+        }}
+        onCancel={() => setIsDeployModalOpen(false)}
+        isOpen={isDeployModalOpen}
+        modelVersion={mv}
+      />
       <ArchiveModelVersionModal
         onCancel={() => setIsArchiveModalOpen(false)}
         onSubmit={() =>

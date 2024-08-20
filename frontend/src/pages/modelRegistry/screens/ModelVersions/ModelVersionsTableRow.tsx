@@ -8,12 +8,14 @@ import ModelLabels from '~/pages/modelRegistry/screens/components/ModelLabels';
 import ModelTimestamp from '~/pages/modelRegistry/screens/components/ModelTimestamp';
 import {
   modelVersionArchiveDetailsUrl,
+  modelVersionDeploymentsUrl,
   modelVersionUrl,
 } from '~/pages/modelRegistry/screens/routeUtils';
 import { ArchiveModelVersionModal } from '~/pages/modelRegistry/screens/components/ArchiveModelVersionModal';
 import { ModelRegistryContext } from '~/concepts/modelRegistry/context/ModelRegistryContext';
 import { getPatchBodyForModelVersion } from '~/pages/modelRegistry/screens/utils';
 import { RestoreModelVersionModal } from '~/pages/modelRegistry/screens/components/RestoreModelVersionModal';
+import DeployRegisteredModelModal from '~/pages/modelRegistry/screens/components/DeployRegisteredModelModal';
 
 type ModelVersionsTableRowProps = {
   modelVersion: ModelVersion;
@@ -30,6 +32,7 @@ const ModelVersionsTableRow: React.FC<ModelVersionsTableRowProps> = ({
   const { preferredModelRegistry } = React.useContext(ModelRegistrySelectorContext);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = React.useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = React.useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
   const { apiState } = React.useContext(ModelRegistryContext);
 
   const actions = isArchiveRow
@@ -42,11 +45,10 @@ const ModelVersionsTableRow: React.FC<ModelVersionsTableRowProps> = ({
     : [
         {
           title: 'Deploy',
-          // TODO: Implement functionality for onClick. This will be added in another PR
-          onClick: () => undefined,
+          onClick: () => setIsDeployModalOpen(true),
         },
         {
-          title: 'Archive version',
+          title: 'Archive model version',
           onClick: () => setIsArchiveModalOpen(true),
         },
       ];
@@ -84,7 +86,7 @@ const ModelVersionsTableRow: React.FC<ModelVersionsTableRowProps> = ({
       <Td dataLabel="Last modified">
         <ModelTimestamp timeSinceEpoch={mv.lastUpdateTimeSinceEpoch} />
       </Td>
-      <Td dataLabel="Owner">{mv.author}</Td>
+      <Td dataLabel="Author">{mv.author}</Td>
       <Td dataLabel="Labels">
         <ModelLabels customProperties={mv.customProperties} name={mv.name} />
       </Td>
@@ -104,6 +106,20 @@ const ModelVersionsTableRow: React.FC<ModelVersionsTableRowProps> = ({
           }
           isOpen={isArchiveModalOpen}
           modelVersionName={mv.name}
+        />
+        <DeployRegisteredModelModal
+          onSubmit={() =>
+            navigate(
+              modelVersionDeploymentsUrl(
+                mv.id,
+                mv.registeredModelId,
+                preferredModelRegistry?.metadata.name,
+              ),
+            )
+          }
+          onCancel={() => setIsDeployModalOpen(false)}
+          isOpen={isDeployModalOpen}
+          modelVersion={mv}
         />
         <RestoreModelVersionModal
           onCancel={() => setIsRestoreModalOpen(false)}

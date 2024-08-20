@@ -8,7 +8,7 @@ export const mockedArtifactsResponse: GetArtifactsResponse = {
       id: 1,
       typeId: 14,
       type: 'system.Metrics',
-      uri: 's3://scalar-metrics-uri',
+      uri: 's3://scalar-metrics-uri-scalar-metrics-uri',
       properties: {},
       customProperties: {
         accuracy: { doubleValue: 92 },
@@ -326,6 +326,19 @@ export const mockedArtifactsResponse: GetArtifactsResponse = {
           },
         },
         display_name: { stringValue: 'confusion matrix' },
+      },
+      state: 2,
+      createTimeSinceEpoch: 1611399342384,
+      lastUpdateTimeSinceEpoch: 1611399342384,
+    },
+    {
+      id: 6,
+      typeId: 18,
+      type: 'system.HTML',
+      uri: 's3://html-metrics-uri',
+      properties: {},
+      customProperties: {
+        display_name: { stringValue: 'html metrics' },
       },
       state: 2,
       createTimeSinceEpoch: 1611399342384,

@@ -1,6 +1,7 @@
 import { FormSection } from '@patternfly/react-core';
 import * as React from 'react';
 import ConnectionTypeDataFormField from '~/concepts/connectionTypes/fields/ConnectionTypeDataFormField';
+import DataFormFieldGroup from '~/concepts/connectionTypes/fields/DataFormFieldGroup';
 import SectionFormField from '~/concepts/connectionTypes/fields/SectionFormField';
 import {
   ConnectionTypeDataField,
@@ -16,9 +17,6 @@ type Props = {
 };
 
 type FieldGroup = { section: SectionField | undefined; fields: ConnectionTypeDataField[] };
-
-const createKey = (field: ConnectionTypeField) =>
-  `${field.type}-${field.type === ConnectionTypeFieldType.Section ? field.name : field.envVar}`;
 
 const ConnectionTypeFormFields: React.FC<Props> = ({ fields, isPreview, onChange }) => {
   const fieldGroups = React.useMemo(
@@ -37,20 +35,24 @@ const ConnectionTypeFormFields: React.FC<Props> = ({ fields, isPreview, onChange
   );
 
   const renderDataFields = (dataFields: ConnectionTypeDataField[]) =>
-    dataFields.map((field) => (
-      <ConnectionTypeDataFormField
-        key={createKey(field)}
-        field={field}
-        isPreview={isPreview}
-        onChange={onChange}
-      />
+    dataFields.map((field, i) => (
+      <DataFormFieldGroup key={i} field={field}>
+        {(id) => (
+          <ConnectionTypeDataFormField
+            id={id}
+            field={field}
+            mode={isPreview ? 'preview' : 'instance'}
+            onChange={onChange ? (v) => onChange(field, v) : undefined}
+          />
+        )}
+      </DataFormFieldGroup>
     ));
 
   return (
     <>
-      {fieldGroups?.map((fieldGroup) =>
+      {fieldGroups?.map((fieldGroup, i) =>
         fieldGroup.section ? (
-          <SectionFormField field={fieldGroup.section} key={createKey(fieldGroup.section)}>
+          <SectionFormField field={fieldGroup.section} key={i}>
             {renderDataFields(fieldGroup.fields)}
           </SectionFormField>
         ) : (
