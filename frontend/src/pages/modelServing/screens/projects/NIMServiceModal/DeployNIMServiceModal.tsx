@@ -38,6 +38,8 @@ import { getDisplayNameFromK8sResource, translateDisplayNameForK8s } from '~/con
 import { useAccessReview } from '~/api';
 import { SupportedArea, useIsAreaAvailable } from '~/concepts/areas';
 import KServeAutoscalerReplicaSection from '~/pages/modelServing/screens/projects/kServeModal/KServeAutoscalerReplicaSection';
+import useGenericObjectState from '~/utilities/useGenericObjectState';
+import { AcceleratorProfileSelectFieldState } from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
 
 const NIM_SECRET_NAME = 'nvidia-nim-secrets';
 const NIM_NGC_SECRET_NAME = 'ngc-secret';
@@ -92,11 +94,19 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   const isInferenceServiceNameWithinLimit =
     translateDisplayNameForK8s(createDataInferenceService.name).length <= 253;
 
-  const [acceleratorProfileState, setAcceleratorProfileState, resetAcceleratorProfileData] =
-    useServingAcceleratorProfile(
-      editInfo?.servingRuntimeEditInfo?.servingRuntime,
-      editInfo?.inferenceServiceEditInfo,
-    );
+  const acceleratorProfileState = useServingAcceleratorProfile(
+    editInfo?.servingRuntimeEditInfo?.servingRuntime,
+    editInfo?.inferenceServiceEditInfo,
+  );
+  const [
+    selectedAcceleratorProfile,
+    setSelectedAcceleratorProfile,
+    resetSelectedAcceleratorProfile,
+  ] = useGenericObjectState<AcceleratorProfileSelectFieldState>({
+    profile: undefined,
+    count: 0,
+    useExistingSettings: false,
+  });
   const customServingRuntimesEnabled = useCustomServingRuntimesEnabled();
   const [allowCreate] = useAccessReview({
     ...accessReviewResource,
@@ -142,7 +152,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
     setActionInProgress(false);
     resetDataServingRuntime();
     resetDataInferenceService();
-    resetAcceleratorProfileData();
+    resetSelectedAcceleratorProfile();
     setAlertVisible(true);
   };
 
@@ -172,6 +182,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       editInfo?.servingRuntimeEditInfo,
       false,
       acceleratorProfileState,
+      selectedAcceleratorProfile,
       NamespaceApplicationCase.KSERVE_PROMOTION,
       projectContext?.currentProject,
       servingRuntimeName,
@@ -184,6 +195,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       servingRuntimeName,
       false,
       acceleratorProfileState,
+      selectedAcceleratorProfile,
       allowCreate,
       editInfo?.secrets,
       false,
@@ -296,7 +308,8 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
               sizes={sizes}
               servingRuntimeSelected={servingRuntimeSelected}
               acceleratorProfileState={acceleratorProfileState}
-              setAcceleratorProfileState={setAcceleratorProfileState}
+              selectedAcceleratorProfile={selectedAcceleratorProfile}
+              setSelectedAcceleratorProfile={setSelectedAcceleratorProfile}
               infoContent="Select a server size that will accommodate your largest model. See the product documentation for more information."
             />
           </StackItem>
