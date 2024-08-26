@@ -108,6 +108,20 @@ describe('Model archive list', () => {
     registeredModelArchive.shouldArchiveVersionsEmpty();
   });
 
+  it('Archived model details browser back button should lead to archived models table', () => {
+    initIntercepts({});
+    registeredModelArchive.visit();
+    verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/archive');
+    registeredModelArchive.findArchiveModelBreadcrumbItem().contains('Archived models');
+    const archiveModelRow = registeredModelArchive.getRow('model 2');
+    archiveModelRow.findName().contains('model 2').click();
+    verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/archive/2/versions');
+    cy.findByTestId('app-page-title').should('have.text', 'model 2Archived');
+    cy.go('back');
+    verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/archive');
+    registeredModelArchive.findArchiveModelTable().should('be.visible');
+  });
+
   it('Archive models list', () => {
     initIntercepts({});
     registeredModelArchive.visit();
@@ -167,11 +181,7 @@ describe('Restoring archive model', () => {
 
     cy.wait('@modelRestored').then((interception) => {
       expect(interception.request.body).to.eql({
-        customProperties: {},
-        description: '',
-        externalID: '1234132asdfasdf',
         state: 'LIVE',
-        owner: 'Author 1',
       });
     });
   });
@@ -197,11 +207,7 @@ describe('Restoring archive model', () => {
 
     cy.wait('@modelRestored').then((interception) => {
       expect(interception.request.body).to.eql({
-        customProperties: {},
-        description: '',
-        externalID: '1234132asdfasdf',
         state: 'LIVE',
-        owner: 'Author 1',
       });
     });
   });
@@ -231,11 +237,7 @@ describe('Archiving model', () => {
     archiveModelModal.findArchiveButton().should('be.enabled').click();
     cy.wait('@modelArchived').then((interception) => {
       expect(interception.request.body).to.eql({
-        customProperties: {},
-        description: '',
-        externalID: '1234132asdfasdf',
         state: 'ARCHIVED',
-        owner: 'Author 1',
       });
     });
   });
@@ -265,11 +267,7 @@ describe('Archiving model', () => {
     archiveModelModal.findArchiveButton().should('be.enabled').click();
     cy.wait('@modelArchived').then((interception) => {
       expect(interception.request.body).to.eql({
-        customProperties: {},
-        description: '',
-        externalID: '1234132asdfasdf',
         state: 'ARCHIVED',
-        owner: 'Author 1',
       });
     });
   });

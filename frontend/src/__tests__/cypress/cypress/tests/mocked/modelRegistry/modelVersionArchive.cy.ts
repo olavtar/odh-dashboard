@@ -121,6 +121,10 @@ const initIntercepts = ({
 
 describe('Model version archive list', () => {
   it('No archive versions in the selected registered model', () => {
+    // Bypass patternfly ExpandableSection error https://github.com/patternfly/patternfly-react/issues/10410
+    // Cannot destructure property 'offsetWidth' of 'this.expandableContentRef.current' as it is null.
+    Cypress.on('uncaught:exception', () => false);
+
     initIntercepts({ modelVersions: [mockModelVersion({ id: '3', name: 'model version 2' })] });
     modelVersionArchive.visitModelVersionList();
     verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/1/versions');
@@ -129,6 +133,22 @@ describe('Model version archive list', () => {
       .findDropdownItem('View archived versions')
       .click();
     modelVersionArchive.shouldArchiveVersionsEmpty();
+  });
+
+  it('Archived version details browser back button should lead to archived versions table', () => {
+    initIntercepts({});
+    modelVersionArchive.visit();
+    verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/1/versions/archive');
+    modelVersionArchive.findArchiveVersionBreadcrumbItem().contains('Archived version');
+    const archiveVersionRow = modelVersionArchive.getRow('model version 2');
+    archiveVersionRow.findName().contains('model version 2').click();
+    verifyRelativeURL(
+      '/modelRegistry/modelregistry-sample/registeredModels/1/versions/archive/2/details',
+    );
+    cy.go('back');
+    verifyRelativeURL('/modelRegistry/modelregistry-sample/registeredModels/1/versions/archive');
+    modelVersionArchive.findArchiveVersionBreadcrumbItem().contains('Archived version');
+    archiveVersionRow.findName().contains('model version 2').should('exist');
   });
 
   it('Archive version list', () => {
@@ -190,10 +210,7 @@ describe('Restoring archive version', () => {
 
     cy.wait('@versionRestored').then((interception) => {
       expect(interception.request.body).to.eql({
-        author: 'Test author',
-        customProperties: {},
         state: 'LIVE',
-        description: 'Description of model version',
       });
     });
   });
@@ -219,10 +236,7 @@ describe('Restoring archive version', () => {
 
     cy.wait('@versionRestored').then((interception) => {
       expect(interception.request.body).to.eql({
-        author: 'Test author',
-        customProperties: {},
         state: 'LIVE',
-        description: 'Description of model version',
       });
     });
   });
@@ -252,10 +266,7 @@ describe('Archiving version', () => {
     archiveVersionModal.findArchiveButton().should('be.enabled').click();
     cy.wait('@versionArchived').then((interception) => {
       expect(interception.request.body).to.eql({
-        author: 'Test author',
-        customProperties: {},
         state: 'ARCHIVED',
-        description: 'Description of model version',
       });
     });
   });
@@ -285,10 +296,7 @@ describe('Archiving version', () => {
     archiveVersionModal.findArchiveButton().should('be.enabled').click();
     cy.wait('@versionArchived').then((interception) => {
       expect(interception.request.body).to.eql({
-        author: 'Test author',
-        customProperties: {},
         state: 'ARCHIVED',
-        description: 'Description of model version',
       });
     });
   });
