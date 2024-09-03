@@ -59,10 +59,16 @@ export type DataField<T extends ConnectionTypeFieldTypeUnion, V = string, P = {}
 export type SectionField = Field<ConnectionTypeFieldType.Section | 'section'>;
 
 export type HiddenField = DataField<ConnectionTypeFieldType.Hidden | 'hidden'>;
-export type FileField = DataField<ConnectionTypeFieldType.File | 'file'>;
 export type ShortTextField = DataField<ConnectionTypeFieldType.ShortText | 'short-text'>;
 export type TextField = DataField<ConnectionTypeFieldType.Text | 'text'>;
 export type UriField = DataField<ConnectionTypeFieldType.URI | 'uri'>;
+export type FileField = DataField<
+  ConnectionTypeFieldType.File | 'file',
+  string,
+  {
+    extensions?: string[];
+  }
+>;
 export type BooleanField = DataField<
   ConnectionTypeFieldType.Boolean | 'boolean',
   boolean,
@@ -100,6 +106,10 @@ export type ConnectionTypeField =
   | UriField;
 
 export type ConnectionTypeDataField = Exclude<ConnectionTypeField, SectionField>;
+
+export const isConnectionTypeDataField = (
+  field: ConnectionTypeField,
+): field is ConnectionTypeDataField => field.type !== ConnectionTypeFieldType.Section;
 
 export type ConnectionTypeConfigMap = K8sResourceCommon & {
   metadata: {

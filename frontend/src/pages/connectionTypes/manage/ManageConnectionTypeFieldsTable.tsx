@@ -13,11 +13,13 @@ import {
   EmptyStateVariant,
 } from '@patternfly/react-core';
 import { PlusCircleIcon } from '@patternfly/react-icons';
-import { Table, Thead, Tbody, Tr, Th, ThProps } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th } from '@patternfly/react-table';
 import { ConnectionTypeField, ConnectionTypeFieldType } from '~/concepts/connectionTypes/types';
 import useDraggableTableControlled from '~/utilities/useDraggableTableControlled';
+import { columns } from '~/pages/connectionTypes/manage/fieldTableColumns';
 import ConnectionTypeFieldModal from './ConnectionTypeFieldModal';
 import ManageConnectionTypeFieldsTableRow from './ManageConnectionTypeFieldsTableRow';
+import { ConnectionTypeMoveFieldToSectionModal } from './ConnectionTypeFieldMoveModal';
 
 type EmptyFieldsTableProps = {
   onAddSection: () => void;
@@ -51,18 +53,14 @@ type Props = {
   onFieldsChange: (fields: ConnectionTypeField[]) => void;
 };
 
-const columns: ThProps[] = [
-  { label: 'Section heading/field name', width: 30 },
-  { label: 'Type', width: 10 },
-  { label: 'Default value', width: 30 },
-  { label: 'Environment variable', width: 20 },
-  { label: 'Required', width: 10 },
-];
-
 const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChange }) => {
   const [modalField, setModalField] = React.useState<
     { field?: ConnectionTypeField; index?: number; isEdit?: boolean } | undefined
   >();
+  const [moveToSectionModalField, setMoveToSectionModalField] = React.useState<{
+    field: ConnectionTypeField;
+    index: number;
+  }>();
 
   const { tableProps, rowsToRender } = useDraggableTableControlled<ConnectionTypeField>(
     fields,
@@ -90,7 +88,8 @@ const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChan
                 <ManageConnectionTypeFieldsTableRow
                   key={index}
                   row={row}
-                  columns={columns}
+                  rowIndex={index}
+                  fields={fields}
                   onEdit={() => {
                     setModalField({
                       field: row,
@@ -98,7 +97,7 @@ const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChan
                       index,
                     });
                   }}
-                  onDelete={() => onFieldsChange(fields.filter((f, i) => i !== index))}
+                  onRemove={() => onFieldsChange(fields.filter((f, i) => i !== index))}
                   onDuplicate={(field) => {
                     setModalField({
                       field: structuredClone(field),
@@ -113,6 +112,9 @@ const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChan
                     } else {
                       setModalField({});
                     }
+                  }}
+                  onMoveToSection={() => {
+                    setMoveToSectionModalField({ field: row, index });
                   }}
                   onChange={(updatedField) => {
                     onFieldsChange([
@@ -154,6 +156,7 @@ const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChan
       )}
       {modalField ? (
         <ConnectionTypeFieldModal
+          fields={fields}
           field={modalField.field}
           isEdit={modalField.isEdit}
           onClose={() => setModalField(undefined)}
@@ -181,6 +184,20 @@ const ManageConnectionTypeFieldsTable: React.FC<Props> = ({ fields, onFieldsChan
           }}
         />
       ) : undefined}
+      {moveToSectionModalField && (
+        <ConnectionTypeMoveFieldToSectionModal
+          row={moveToSectionModalField}
+          fields={fields}
+          onClose={() => setMoveToSectionModalField(undefined)}
+          onSubmit={(field, sectionIndex) => {
+            const temp = fields.toSpliced(moveToSectionModalField.index, 1);
+            const newFieldIndex =
+              moveToSectionModalField.index < sectionIndex ? sectionIndex : sectionIndex + 1;
+            onFieldsChange(temp.toSpliced(newFieldIndex, 0, field));
+            setMoveToSectionModalField(undefined);
+          }}
+        />
+      )}
     </>
   );
 };

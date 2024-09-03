@@ -3,6 +3,8 @@ import { ConnectionTypeDataField, ConnectionTypeFieldType } from '~/concepts/con
 import BooleanAdvancedPropertiesForm from '~/pages/connectionTypes/manage/advanced/BooleanAdvancedPropertiesForm';
 import { AdvancedFieldProps } from '~/pages/connectionTypes/manage/advanced/types';
 import NumericAdvancedPropertiesForm from '~/pages/connectionTypes/manage/advanced/NumericAdvancedPropertiesForm';
+import FileUploadAdvancedPropertiesForm from '~/pages/connectionTypes/manage/advanced/FileUploadAdvancedPropertiesForm';
+import DropdownAdvancedPropertiesForm from '~/pages/connectionTypes/manage/advanced/DropdownAdvancedPropertiesForm';
 
 const CustomFieldPropertiesForm = <T extends ConnectionTypeDataField>(
   props: AdvancedFieldProps<T>,
@@ -11,7 +13,7 @@ const CustomFieldPropertiesForm = <T extends ConnectionTypeDataField>(
     // TODO define advanced forms
     switch (props.field.type) {
       case ConnectionTypeFieldType.File:
-        return () => null;
+        return FileUploadAdvancedPropertiesForm;
 
       case ConnectionTypeFieldType.Boolean:
         return BooleanAdvancedPropertiesForm;
@@ -20,7 +22,7 @@ const CustomFieldPropertiesForm = <T extends ConnectionTypeDataField>(
         return NumericAdvancedPropertiesForm;
 
       case ConnectionTypeFieldType.Dropdown:
-        return () => null;
+        return DropdownAdvancedPropertiesForm;
     }
     return undefined;
   })();
