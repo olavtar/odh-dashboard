@@ -23,7 +23,8 @@ import {
 } from '~/pages/modelServing/customServingRuntimes/utils';
 import { ServingRuntimePlatform } from '~/types';
 import { getProjectModelServingPlatform } from '~/pages/modelServing/screens/projects/utils';
-import KServeInferenceServiceTable from '~/pages/modelServing/screens/projects/KServeSection/KServeInferenceServiceTable';
+import KServeInferenceServiceTable
+  from '~/pages/modelServing/screens/projects/KServeSection/KServeInferenceServiceTable';
 import useServingPlatformStatuses from '~/pages/modelServing/useServingPlatformStatuses';
 import DashboardPopupIconButton from '~/concepts/dashboard/DashboardPopupIconButton';
 import DetailsSection from '~/pages/projects/screens/detail/DetailsSection';
@@ -32,6 +33,7 @@ import EmptySingleModelServingCard from '~/pages/modelServing/screens/projects/E
 import EmptyMultiModelServingCard from '~/pages/modelServing/screens/projects/EmptyMultiModelServingCard';
 import { ProjectObjectType, typedEmptyImage } from '~/concepts/design/utils';
 import EmptyModelServingPlatform from '~/pages/modelServing/screens/projects/EmptyModelServingPlatform';
+import EmptyNIMModelServingCard from '~/pages/modelServing/screens/projects/EmptyNIMModelServingCard';
 import ManageServingRuntimeModal from './ServingRuntimeModal/ManageServingRuntimeModal';
 import ModelMeshServingRuntimeTable from './ModelMeshSection/ServingRuntimeTable';
 import ModelServingPlatformButtonAction from './ModelServingPlatformButtonAction';
@@ -196,6 +198,9 @@ const ModelServingPlatform: React.FC = () => {
                       </GalleryItem>
                       <GalleryItem>
                         <EmptyMultiModelServingCard />
+                      </GalleryItem>
+                      <GalleryItem>
+                        <EmptyNIMModelServingCard />
                       </GalleryItem>
                     </Gallery>
                   </StackItem>

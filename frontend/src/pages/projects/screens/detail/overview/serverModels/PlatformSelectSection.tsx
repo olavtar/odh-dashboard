@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Alert, Gallery, Stack, Text, TextContent } from '@patternfly/react-core';
 import CollapsibleSection from '~/concepts/design/CollapsibleSection';
+import SelectNIMCard from './SelectNIMCard';
 import SelectSingleModelCard from './SelectSingleModelCard';
 import SelectMultiModelCard from './SelectMultiModelCard';
 
@@ -18,11 +19,12 @@ const PlatformSelectSection: React.FC = () => (
       </TextContent>
       <Gallery
         hasGutter
-        minWidths={{ default: '100%', lg: 'calc(50% - 1rem / 2)' }}
-        maxWidths={{ default: '100%', lg: 'calc(50% - 1rem / 2)' }}
+        minWidths={{ default: '100%', lg: 'calc(33.33% - 1rem)' }}
+        maxWidths={{ default: '100%', lg: 'calc(33.33% - 1rem)' }}
       >
         <SelectSingleModelCard />
         <SelectMultiModelCard />
+        <SelectNIMCard />
       </Gallery>
       <Alert
         isInline

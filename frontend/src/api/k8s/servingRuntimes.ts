@@ -7,19 +7,16 @@ import {
   k8sUpdateResource,
 } from '@openshift/dynamic-plugin-sdk-utils';
 import { ServingRuntimeModel } from '~/api/models';
-import {
-  K8sAPIOptions,
-  ServingContainer,
-  ServingRuntimeAnnotations,
-  ServingRuntimeKind,
-} from '~/k8sTypes';
-import { CreatingServingRuntimeObject } from '~/pages/modelServing/screens/types';
+import { K8sAPIOptions, ServingContainer, ServingRuntimeAnnotations, ServingRuntimeKind } from '~/k8sTypes';
+import { CreatingServingRuntimeObject, SupportedModelFormatsInfo } from '~/pages/modelServing/screens/types';
 import { ContainerResources } from '~/types';
 import { getModelServingRuntimeName } from '~/pages/modelServing/utils';
 import { getDisplayNameFromK8sResource, translateDisplayNameForK8s } from '~/concepts/k8s/utils';
 import { applyK8sAPIOptions } from '~/api/apiMergeUtils';
 import { AcceleratorProfileState } from '~/utilities/useAcceleratorProfileState';
-import { AcceleratorProfileSelectFieldState } from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
+import {
+  AcceleratorProfileSelectFieldState,
+} from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
 import { getModelServingProjects } from './projects';
 import { assemblePodSpecOptions, getshmVolume, getshmVolumeMount } from './utils';
 
@@ -33,7 +30,15 @@ export const assembleServingRuntime = (
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
   isModelMesh?: boolean,
 ): ServingRuntimeKind => {
-  const { name: displayName, numReplicas, modelSize, externalRoute, tokenAuth } = data;
+  const {
+    name: displayName,
+    numReplicas,
+    modelSize,
+    externalRoute,
+    tokenAuth,
+    imageName,
+    supportedModelFormatsInfo,
+  } = data;
   const createName = isCustomServingRuntimesEnabled
     ? translateDisplayNameForK8s(displayName)
     : getModelServingRuntimeName(namespace);
@@ -123,7 +128,12 @@ export const assembleServingRuntime = (
         volumeMounts.push(getshmVolumeMount());
       }
 
-      const containerWithoutResources = _.omit(container, 'resources');
+      const updatedContainer = {
+        ...container,
+        ...(imageName && { image: imageName }),
+      };
+
+      const containerWithoutResources = _.omit(updatedContainer, 'resources');
 
       return {
         ...containerWithoutResources,
@@ -133,6 +143,17 @@ export const assembleServingRuntime = (
       };
     },
   );
+
+  if (supportedModelFormatsInfo) {
+    const supportedModelFormatsObj: SupportedModelFormatsInfo = {
+      name: supportedModelFormatsInfo.name,
+      version: supportedModelFormatsInfo.version,
+      autoSelect: true,
+      priority: 1,
+    };
+
+    updatedServingRuntime.spec.supportedModelFormats = [supportedModelFormatsObj];
+  }
 
   if (isModelMesh) {
     updatedServingRuntime.spec.tolerations = tolerations;

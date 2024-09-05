@@ -4,8 +4,8 @@ import {
   k8sDeleteResource,
   k8sGetResource,
   k8sListResource,
-  k8sUpdateResource,
   K8sStatus,
+  k8sUpdateResource,
 } from '@openshift/dynamic-plugin-sdk-utils';
 import { InferenceServiceModel } from '~/api/models';
 import { InferenceServiceKind, K8sAPIOptions, KnownLabels } from '~/k8sTypes';
@@ -14,7 +14,9 @@ import { translateDisplayNameForK8s } from '~/concepts/k8s/utils';
 import { applyK8sAPIOptions } from '~/api/apiMergeUtils';
 import { AcceleratorProfileState } from '~/utilities/useAcceleratorProfileState';
 import { ContainerResources } from '~/types';
-import { AcceleratorProfileSelectFieldState } from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
+import {
+  AcceleratorProfileSelectFieldState,
+} from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
 import { getModelServingProjects } from './projects';
 import { assemblePodSpecOptions } from './utils';
 
@@ -24,6 +26,7 @@ export const assembleInferenceService = (
   editName?: string,
   isModelMesh?: boolean,
   inferenceService?: InferenceServiceKind,
+  isStorageNeeded?: boolean,
   initialAcceleratorProfile?: AcceleratorProfileState,
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
 ): InferenceServiceKind => {
@@ -162,6 +165,11 @@ export const assembleInferenceService = (
     };
   }
 
+  // If storage is not needed, remove storage from the inference service
+  if (isStorageNeeded !== undefined && !isStorageNeeded) {
+    delete updateInferenceService.spec.predictor.model?.storage;
+  }
+
   return updateInferenceService;
 };
 
@@ -234,6 +242,7 @@ export const createInferenceService = (
   initialAcceleratorProfile?: AcceleratorProfileState,
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
   dryRun = false,
+  isStorageNeeded?: boolean,
 ): Promise<InferenceServiceKind> => {
   const inferenceService = assembleInferenceService(
     data,
@@ -241,6 +250,7 @@ export const createInferenceService = (
     undefined,
     isModelMesh,
     undefined,
+    isStorageNeeded,
     initialAcceleratorProfile,
     selectedAcceleratorProfile,
   );
@@ -263,6 +273,7 @@ export const updateInferenceService = (
   initialAcceleratorProfile?: AcceleratorProfileState,
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
   dryRun = false,
+  isStorageNeeded?: boolean,
 ): Promise<InferenceServiceKind> => {
   const inferenceService = assembleInferenceService(
     data,
@@ -270,6 +281,7 @@ export const updateInferenceService = (
     existingData.metadata.name,
     isModelMesh,
     existingData,
+    isStorageNeeded,
     initialAcceleratorProfile,
     selectedAcceleratorProfile,
   );

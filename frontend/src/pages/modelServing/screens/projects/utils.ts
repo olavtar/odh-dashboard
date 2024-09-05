@@ -3,6 +3,7 @@ import {
   DashboardConfigKind,
   InferenceServiceKind,
   KnownLabels,
+  PersistentVolumeClaimKind,
   ProjectKind,
   SecretKind,
   ServingRuntimeKind,
@@ -13,10 +14,10 @@ import {
   CreatingInferenceServiceObject,
   CreatingServingRuntimeObject,
   InferenceServiceStorageType,
+  LabeledDataConnection,
+  ModelServingSize,
   ServingPlatformStatuses,
   ServingRuntimeEditInfo,
-  ModelServingSize,
-  LabeledDataConnection,
 } from '~/pages/modelServing/screens/types';
 import { ServingRuntimePlatform } from '~/types';
 import { DEFAULT_MODEL_SERVER_SIZES } from '~/pages/modelServing/screens/const';
@@ -36,15 +37,24 @@ import {
   addSupportServingPlatformProject,
   assembleSecret,
   createInferenceService,
+  createPvc,
   createSecret,
   createServingRuntime,
+  getConfigMap,
+  getSecret,
   updateInferenceService,
   updateServingRuntime,
 } from '~/api';
 import { isDataConnectionAWS } from '~/pages/projects/screens/detail/data-connections/utils';
 import { removeLeadingSlash } from '~/utilities/string';
 import { RegisteredModelDeployInfo } from '~/pages/modelRegistry/screens/RegisteredModels/useRegisteredModelDeployInfo';
-import { AcceleratorProfileSelectFieldState } from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
+import {
+  AcceleratorProfileSelectFieldState,
+} from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
+
+const NIM_CONFIGMAP_NAME = 'nvidia-nim-images-data';
+const NIM_SECRET_NAME = 'nvidia-nim-access';
+const NIM_NGC_SECRET_NAME = 'nvidia-nim-image-pull';
 
 export const getServingRuntimeSizes = (config: DashboardConfigKind): ModelServingSize[] => {
   let sizes = config.spec.modelServerSizes || [];
@@ -318,6 +328,7 @@ const createInferenceServiceAndDataConnection = (
   initialAcceleratorProfile?: AcceleratorProfileState,
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
   dryRun = false,
+  isStorageNeeded?: boolean,
 ) => {
   if (!existingStorage) {
     return createAWSSecret(inferenceServiceData, dryRun).then((secret) =>
@@ -330,6 +341,7 @@ const createInferenceServiceAndDataConnection = (
             initialAcceleratorProfile,
             selectedAcceleratorProfile,
             dryRun,
+            isStorageNeeded,
           )
         : createInferenceService(
             inferenceServiceData,
@@ -338,6 +350,7 @@ const createInferenceServiceAndDataConnection = (
             initialAcceleratorProfile,
             selectedAcceleratorProfile,
             dryRun,
+            isStorageNeeded,
           ),
     );
   }
@@ -350,6 +363,7 @@ const createInferenceServiceAndDataConnection = (
         initialAcceleratorProfile,
         selectedAcceleratorProfile,
         dryRun,
+        isStorageNeeded,
       )
     : createInferenceService(
         inferenceServiceData,
@@ -358,6 +372,7 @@ const createInferenceServiceAndDataConnection = (
         initialAcceleratorProfile,
         selectedAcceleratorProfile,
         dryRun,
+        isStorageNeeded,
       );
 };
 
@@ -370,6 +385,7 @@ export const getSubmitInferenceServiceResourceFn = (
   selectedAcceleratorProfile?: AcceleratorProfileSelectFieldState,
   allowCreate?: boolean,
   secrets?: SecretKind[],
+  isStorageNeeded?: boolean,
 ): ((opts: { dryRun?: boolean }) => Promise<void>) => {
   const inferenceServiceData = {
     ...createData,
@@ -399,6 +415,7 @@ export const getSubmitInferenceServiceResourceFn = (
       initialAcceleratorProfile,
       selectedAcceleratorProfile,
       dryRun,
+      isStorageNeeded,
     ).then((inferenceService) =>
       setUpTokenAuth(
         createData,
@@ -553,6 +570,96 @@ export const filterOutConnectionsWithoutBucket = (
       obj.dataConnection.data.data.AWS_S3_BUCKET.trim() !== '',
   );
 
+export interface ModelInfo {
+  name: string;
+  displayName: string;
+  shortDescription: string;
+  namespace: string;
+  tags: string[];
+  latestTag: string;
+  updatedDate: string;
+}
+
+export const fetchNIMModelNames = async (
+  dashboardNamespace: string,
+): Promise<ModelInfo[] | undefined> => {
+  const configMap = await getConfigMap(dashboardNamespace, NIM_CONFIGMAP_NAME);
+  if (configMap.data && Object.keys(configMap.data).length > 0) {
+    const modelInfos: ModelInfo[] = Object.entries(configMap.data).map(([key, value]) => {
+      const modelData = JSON.parse(value);
+      return {
+        name: key,
+        displayName: modelData.displayName,
+        shortDescription: modelData.shortDescription,
+        namespace: modelData.namespace,
+        tags: modelData.tags,
+        latestTag: modelData.latestTag,
+        updatedDate: modelData.updatedDate,
+      };
+    });
+    return modelInfos;
+  }
+  return undefined;
+};
+
+export const createNIMSecret = async (
+  projectName: string,
+  secretName: string,
+  isNGC: boolean,
+  dryRun: boolean,
+  dashboardNamespace: string,
+): Promise<SecretKind> => {
+  const labels: Record<string, string> = {
+    [KnownLabels.DASHBOARD_RESOURCE]: 'true',
+  };
+  const data: Record<string, string> = {};
+  const newSecret = {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: secretName,
+      namespace: projectName,
+      // labels,
+    },
+    data,
+    type: isNGC ? 'kubernetes.io/dockerconfigjson' : 'Opaque',
+  };
+  const nimSecretData: SecretKind = isNGC
+    ? await getSecret(dashboardNamespace, NIM_NGC_SECRET_NAME)
+    : await getSecret(dashboardNamespace, NIM_SECRET_NAME);
+
+  if (nimSecretData.data) {
+    if (!isNGC) {
+      data.NGC_API_KEY = nimSecretData.data.api_key;
+    } else {
+      data['.dockerconfigjson'] = nimSecretData.data['.dockerconfigjson'];
+    }
+    return createSecret(newSecret, { dryRun });
+  }
+
+  return Promise.reject(new Error(`Error creating NIM ${isNGC ? 'NGC' : null} secret`));
+};
+
+export const createNIMPVC = (
+  projectName: string,
+  pvcName: string,
+  pvcSize: string,
+  dryRun: boolean,
+): Promise<PersistentVolumeClaimKind> =>
+  createPvc(
+    {
+      nameDesc: {
+        name: pvcName,
+        description: '',
+      },
+      size: pvcSize,
+    },
+    projectName,
+    undefined,
+    {
+      dryRun,
+    },
+  );
 export const getCreateInferenceServiceLabels = (
   data: Pick<RegisteredModelDeployInfo, 'registeredModelId' | 'modelVersionId'> | undefined,
 ): { labels: Record<string, string> } | undefined => {

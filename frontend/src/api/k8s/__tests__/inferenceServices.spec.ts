@@ -1,9 +1,9 @@
 import {
-  K8sStatus,
   k8sCreateResource,
   k8sDeleteResource,
   k8sGetResource,
   k8sListResource,
+  K8sStatus,
   k8sUpdateResource,
 } from '@openshift/dynamic-plugin-sdk-utils';
 import { mockAcceleratorProfile } from '~/__mocks__/mockAcceleratorProfile';
@@ -28,7 +28,9 @@ import { InferenceServiceKind, ProjectKind } from '~/k8sTypes';
 import { translateDisplayNameForK8s } from '~/concepts/k8s/utils';
 import { ModelServingSize } from '~/pages/modelServing/screens/types';
 import { AcceleratorProfileState } from '~/utilities/useAcceleratorProfileState';
-import { AcceleratorProfileSelectFieldState } from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
+import {
+  AcceleratorProfileSelectFieldState,
+} from '~/pages/notebookController/screens/server/AcceleratorProfileSelectField';
 
 jest.mock('@openshift/dynamic-plugin-sdk-utils', () => ({
   k8sListResource: jest.fn(),
@@ -186,6 +188,7 @@ describe('assembleInferenceService', () => {
       undefined,
       false,
       undefined,
+      undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
     );
@@ -217,6 +220,7 @@ describe('assembleInferenceService', () => {
       undefined,
       undefined,
       true,
+      undefined,
       undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
@@ -251,6 +255,7 @@ describe('assembleInferenceService', () => {
       undefined,
       false,
       undefined,
+      undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
     );
@@ -278,6 +283,7 @@ describe('assembleInferenceService', () => {
       undefined,
       undefined,
       true,
+      undefined,
       undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
@@ -320,6 +326,7 @@ describe('assembleInferenceService', () => {
       undefined,
       undefined,
       false,
+      undefined,
       undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
@@ -372,6 +379,7 @@ describe('assembleInferenceService', () => {
       undefined,
       undefined,
       true,
+      undefined,
       undefined,
       acceleratorProfileState,
       selectedAcceleratorProfile,
