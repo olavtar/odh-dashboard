@@ -131,8 +131,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   }, [currentProjectName, setCreateDataInferenceService]);
 
   // Serving Runtime Validation
-  const isDisabledServingRuntime =
-    namespace === '' || actionInProgress || createDataServingRuntime.imageName === undefined;
+  const isDisabledServingRuntime = namespace === '' || actionInProgress;
 
   const baseInputValueValid =
     createDataServingRuntime.numReplicas >= 0 &&
@@ -222,15 +221,21 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       submitServingRuntimeResources({ dryRun: true }),
       submitInferenceServiceResource({ dryRun: true }),
     ])
-      .then(() =>
-        Promise.all([
+      .then(() => {
+        const promises = [
           submitServingRuntimeResources({ dryRun: false }),
           submitInferenceServiceResource({ dryRun: false }),
-          createNIMSecret(namespace, NIM_SECRET_NAME, false, false),
-          createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false),
-          createNIMPVC(namespace, nimPVCName, pvcSize, false),
-        ]),
-      )
+        ];
+        if (!editInfo) {
+          promises.push(
+            createNIMSecret(namespace, NIM_SECRET_NAME, false, false),
+            createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false),
+            createNIMPVC(namespace, nimPVCName, pvcSize, false),
+          );
+        }
+
+        return Promise.all(promises);
+      })
       .then(() => onSuccess())
       .catch((e) => {
         setErrorModal(e);
@@ -246,14 +251,14 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
 
   return (
     <Modal
-      title="Deploy model with NVIDIA NIM"
+      title={`${editInfo ? 'Edit' : 'Deploy'} model with NVIDIA NIM`}
       description="Configure properties for deploying your model using an NVIDIA NIM."
       variant="medium"
       isOpen
       onClose={() => onBeforeClose(false)}
       footer={
         <DashboardModalFooter
-          submitLabel="Deploy"
+          submitLabel={editInfo ? 'Redeploy' : 'Deploy'}
           onSubmit={submit}
           onCancel={() => onBeforeClose(false)}
           isSubmitDisabled={isDisabledServingRuntime || isDisabledInferenceService}

@@ -9,8 +9,6 @@ import { isModelMesh } from '~/pages/modelServing/utils';
 import { SupportedArea } from '~/concepts/areas';
 import useIsAreaAvailable from '~/concepts/areas/useIsAreaAvailable';
 import { getDisplayNameFromK8sResource } from '~/concepts/k8s/utils';
-import { byName, ProjectsContext } from '~/concepts/projects/ProjectsContext';
-import { isProjectNIMSupported } from '~/pages/modelServing/screens/projects/nimUtils';
 import InferenceServiceEndpoint from './InferenceServiceEndpoint';
 import InferenceServiceProject from './InferenceServiceProject';
 import InferenceServiceStatus from './InferenceServiceStatus';
@@ -107,17 +105,12 @@ const InferenceServiceTableRow: React.FC<InferenceServiceTableRowProps> = ({
           <ResourceActionsColumn
             resource={inferenceService}
             items={[
-              ...(isKServeNIMEnabled
-                ? []
-                : [
-                    {
-                      title: 'Edit',
-                      onClick: () => {
-                        onEditInferenceService(inferenceService);
-                      },
-                    },
-                    { isSeparator: true },
-                  ]),
+              {
+                title: 'Edit',
+                onClick: () => {
+                  onEditInferenceService(inferenceService);
+                },
+              },
               {
                 title: 'Delete',
                 onClick: () => {
