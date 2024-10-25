@@ -12,6 +12,7 @@ import { EitherOrNone } from '@openshift/dynamic-plugin-sdk';
 import {
   createNIMPVC,
   createNIMSecret,
+  getPVCSize,
   getSubmitInferenceServiceResourceFn,
   getSubmitServingRuntimeResourcesFn,
   useCreateInferenceServiceObject,
@@ -39,7 +40,7 @@ import {
   translateDisplayNameForK8s,
   translateDisplayNameForK8sAndReport,
 } from '~/concepts/k8s/utils';
-import { useAccessReview } from '~/api';
+import { deletePvc, useAccessReview } from '~/api';
 import { SupportedArea, useIsAreaAvailable } from '~/concepts/areas';
 import KServeAutoscalerReplicaSection from '~/pages/modelServing/screens/projects/kServeModal/KServeAutoscalerReplicaSection';
 import NIMPVCSizeSection from '~/pages/modelServing/screens/projects/NIMServiceModal/NIMPVCSizeSection';
@@ -123,12 +124,20 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   const [error, setError] = React.useState<Error | undefined>();
   const [alertVisible, setAlertVisible] = React.useState(true);
   const [pvcSize, setPvcSize] = React.useState<string>('30Gi');
+  const [existingPvcSize, setExistingPvcSize] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (currentProjectName) {
       setCreateDataInferenceService('project', currentProjectName);
     }
   }, [currentProjectName, setCreateDataInferenceService]);
+
+  React.useEffect(() => {
+    // Set pvcSize to existingPvcSize only if it's an edit operation and existingPvcSize is available
+    if (editInfo && existingPvcSize) {
+      setPvcSize(existingPvcSize);
+    }
+  }, [editInfo, existingPvcSize]);
 
   // Serving Runtime Validation
   const isDisabledServingRuntime = namespace === '' || actionInProgress;
@@ -155,6 +164,19 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
 
     fetchNIMServingRuntimeTemplate();
   }, [dashboardNamespace, editInfo]);
+
+  React.useEffect(() => {
+    const fetchPVCSize = async () => {
+      if (editInfo) {
+        const size = await getPVCSize(currentProjectName, editInfo);
+        if (size) {
+          setExistingPvcSize(size);
+        }
+      }
+    };
+
+    fetchPVCSize();
+  }, [editInfo]);
 
   const onBeforeClose = (submitted: boolean) => {
     onClose(submitted);
@@ -221,7 +243,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       submitServingRuntimeResources({ dryRun: true }),
       submitInferenceServiceResource({ dryRun: true }),
     ])
-      .then(() => {
+      .then(async () => {
         const promises = [
           submitServingRuntimeResources({ dryRun: false }),
           submitInferenceServiceResource({ dryRun: false }),
@@ -232,8 +254,11 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
             createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false),
             createNIMPVC(namespace, nimPVCName, pvcSize, false),
           );
+        } else if (existingPvcSize !== pvcSize) {
+          // Delete and recreate the PVC if the size has changed
+          await deletePvc(nimPVCName, namespace); // Assuming deleteNIMPVC exists
+          promises.push(createNIMPVC(namespace, nimPVCName, pvcSize, false));
         }
-
         return Promise.all(promises);
       })
       .then(() => onSuccess())

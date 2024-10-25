@@ -41,6 +41,7 @@ import {
   createPvc,
   createSecret,
   createServingRuntime,
+  getDashboardPvcs,
   updateInferenceService,
   updateServingRuntime,
 } from '~/api';
@@ -645,7 +646,7 @@ export const createNIMPVC = (
     {
       dryRun,
     },
-    true,
+    // true,
   );
 
 export const getCreateInferenceServiceLabels = (
@@ -666,4 +667,35 @@ export const getCreateInferenceServiceLabels = (
     };
   }
   return undefined;
+};
+
+export const getPVCSize = async (
+  namespace: string,
+  editInfo: {
+    servingRuntimeEditInfo?: {
+      servingRuntime?: ServingRuntimeKind;
+    };
+  },
+): Promise<string | undefined> => {
+  if (!editInfo.servingRuntimeEditInfo?.servingRuntime) {
+    return undefined;
+  }
+
+  try {
+    const pvcName = editInfo.servingRuntimeEditInfo.servingRuntime.spec.volumes?.find(
+      (vol) => vol.persistentVolumeClaim?.claimName,
+    )?.persistentVolumeClaim?.claimName;
+
+    if (!pvcName) {
+      return undefined;
+    }
+    const pvcs = await getDashboardPvcs(namespace);
+    const targetPvc = pvcs.find((item) => item.metadata.name === pvcName);
+
+    // Extract and return the storage size if the PVC is found
+    const size = targetPvc?.spec.resources.requests.storage;
+    return size || undefined;
+  } catch (error) {
+    return undefined;
+  }
 };
