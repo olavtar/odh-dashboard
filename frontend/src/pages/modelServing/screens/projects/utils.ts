@@ -669,14 +669,44 @@ export const getCreateInferenceServiceLabels = (
   return undefined;
 };
 
-export const getPVCSize = async (
+// export const getPVCSize = async (
+//   namespace: string,
+//   editInfo: {
+//     servingRuntimeEditInfo?: {
+//       servingRuntime?: ServingRuntimeKind;
+//     };
+//   },
+// ): Promise<string | undefined> => {
+//   if (!editInfo.servingRuntimeEditInfo?.servingRuntime) {
+//     return undefined;
+//   }
+//
+//   try {
+//     const pvcName = editInfo.servingRuntimeEditInfo.servingRuntime.spec.volumes?.find(
+//       (vol) => vol.persistentVolumeClaim?.claimName,
+//     )?.persistentVolumeClaim?.claimName;
+//
+//     if (!pvcName) {
+//       return undefined;
+//     }
+//     const pvcs = await getDashboardPvcs(namespace);
+//     const targetPvc = pvcs.find((item) => item.metadata.name === pvcName);
+//
+//     const size = targetPvc?.spec.resources.requests.storage;
+//     return size || undefined;
+//   } catch (error) {
+//     return undefined;
+//   }
+// };
+
+export const getPVC = async (
   namespace: string,
   editInfo: {
     servingRuntimeEditInfo?: {
       servingRuntime?: ServingRuntimeKind;
     };
   },
-): Promise<string | undefined> => {
+): Promise<PersistentVolumeClaimKind | undefined> => {
   if (!editInfo.servingRuntimeEditInfo?.servingRuntime) {
     return undefined;
   }
@@ -689,12 +719,12 @@ export const getPVCSize = async (
     if (!pvcName) {
       return undefined;
     }
+
     const pvcs = await getDashboardPvcs(namespace);
+    // Find and return the specific PVC by name
     const targetPvc = pvcs.find((item) => item.metadata.name === pvcName);
 
-    // Extract and return the storage size if the PVC is found
-    const size = targetPvc?.spec.resources.requests.storage;
-    return size || undefined;
+    return targetPvc || undefined;
   } catch (error) {
     return undefined;
   }

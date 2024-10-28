@@ -12,7 +12,7 @@ import { EitherOrNone } from '@openshift/dynamic-plugin-sdk';
 import {
   createNIMPVC,
   createNIMSecret,
-  getPVCSize,
+  getPVC,
   getSubmitInferenceServiceResourceFn,
   getSubmitServingRuntimeResourcesFn,
   useCreateInferenceServiceObject,
@@ -21,6 +21,7 @@ import {
 import {
   AccessReviewResourceAttributes,
   InferenceServiceKind,
+  PersistentVolumeClaimKind,
   ProjectKind,
   SecretKind,
   ServingRuntimeKind,
@@ -40,7 +41,7 @@ import {
   translateDisplayNameForK8s,
   translateDisplayNameForK8sAndReport,
 } from '~/concepts/k8s/utils';
-import { deletePvc, useAccessReview } from '~/api';
+import { updatePvc, useAccessReview } from '~/api';
 import { SupportedArea, useIsAreaAvailable } from '~/concepts/areas';
 import KServeAutoscalerReplicaSection from '~/pages/modelServing/screens/projects/kServeModal/KServeAutoscalerReplicaSection';
 import NIMPVCSizeSection from '~/pages/modelServing/screens/projects/NIMServiceModal/NIMPVCSizeSection';
@@ -50,6 +51,7 @@ import {
 } from '~/pages/modelServing/screens/projects/nimUtils';
 import { useDashboardNamespace } from '~/redux/selectors';
 import { getServingRuntimeFromTemplate } from '~/pages/modelServing/customServingRuntimes/utils';
+import { useCreateStorageObjectForNotebook } from '~/pages/projects/screens/spawner/storage/utils';
 
 const NIM_SECRET_NAME = 'nvidia-nim-secrets';
 const NIM_NGC_SECRET_NAME = 'ngc-secret';
@@ -125,6 +127,8 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   const [alertVisible, setAlertVisible] = React.useState(true);
   const [pvcSize, setPvcSize] = React.useState<string>('30Gi');
   const [existingPvcSize, setExistingPvcSize] = React.useState<string | null>(null);
+  const [existingPVC, setExistingPVC] = React.useState<PersistentVolumeClaimKind | undefined>();
+  const [createData, setCreateData, resetData] = useCreateStorageObjectForNotebook(existingPVC);
 
   React.useEffect(() => {
     if (currentProjectName) {
@@ -133,11 +137,33 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   }, [currentProjectName, setCreateDataInferenceService]);
 
   React.useEffect(() => {
-    // Set pvcSize to existingPvcSize only if it's an edit operation and existingPvcSize is available
-    if (editInfo && existingPvcSize) {
-      setPvcSize(existingPvcSize);
-    }
-  }, [editInfo, existingPvcSize]);
+    const fetchPVCSize = async () => {
+      if (editInfo) {
+        const pvcData = await getPVC(namespace, editInfo);
+        if (pvcData) {
+          setExistingPVC(pvcData);
+          const size = pvcData.spec.resources.requests.storage;
+          if (size) {
+            setExistingPvcSize(size);
+            setPvcSize(size);
+          }
+        }
+      }
+    };
+
+    fetchPVCSize();
+  }, [namespace, editInfo]);
+
+  // React.useEffect(() => {
+  //   // Set pvcSize to existingPvcSize only if it's an edit operation and existingPvcSize is available
+  //   if (editInfo && existingPvcSize) {
+  //     setPvcSize(existingPvcSize);
+  //   }
+  // }, [editInfo, existingPvcSize]);
+
+  React.useEffect(() => {
+    setCreateData('size', pvcSize);
+  }, [pvcSize, setCreateData]);
 
   // Serving Runtime Validation
   const isDisabledServingRuntime = namespace === '' || actionInProgress;
@@ -165,19 +191,6 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
     fetchNIMServingRuntimeTemplate();
   }, [dashboardNamespace, editInfo]);
 
-  React.useEffect(() => {
-    const fetchPVCSize = async () => {
-      if (editInfo) {
-        const size = await getPVCSize(currentProjectName, editInfo);
-        if (size) {
-          setExistingPvcSize(size);
-        }
-      }
-    };
-
-    fetchPVCSize();
-  }, [editInfo]);
-
   const onBeforeClose = (submitted: boolean) => {
     onClose(submitted);
     setError(undefined);
@@ -186,6 +199,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
     resetDataInferenceService();
     resetSelectedAcceleratorProfile();
     setAlertVisible(true);
+    resetData();
   };
 
   const setErrorModal = (e: Error) => {
@@ -255,9 +269,10 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
             createNIMPVC(namespace, nimPVCName, pvcSize, false),
           );
         } else if (existingPvcSize !== pvcSize) {
+          promises.push(updatePvc(createData, existingPVC, namespace, false));
           // Delete and recreate the PVC if the size has changed
-          await deletePvc(nimPVCName, namespace); // Assuming deleteNIMPVC exists
-          promises.push(createNIMPVC(namespace, nimPVCName, pvcSize, false));
+          // await deletePvc(nimPVCName, namespace); // Assuming deleteNIMPVC exists
+          // promises.push(createNIMPVC(namespace, nimPVCName, pvcSize, false));
         }
         return Promise.all(promises);
       })
