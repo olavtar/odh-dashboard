@@ -259,7 +259,9 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       submitInferenceServiceResource({ dryRun: true }),
     ])
       .then(async () => {
-        const promises = [
+        const promises: Array<
+          Promise<void | ServingRuntimeKind | PersistentVolumeClaimKind | SecretKind | string>
+        > = [
           submitServingRuntimeResources({ dryRun: false }),
           submitInferenceServiceResource({ dryRun: false }),
         ];
@@ -271,9 +273,6 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
           );
         } else if (existingPvcSize !== pvcSize && existingPVC) {
           promises.push(updatePvc(createData, existingPVC, namespace, false));
-          // Delete and recreate the PVC if the size has changed
-          // await deletePvc(nimPVCName, namespace); // Assuming deleteNIMPVC exists
-          // promises.push(createNIMPVC(namespace, nimPVCName, pvcSize, false));
         }
         return Promise.all(promises);
       })

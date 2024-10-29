@@ -560,8 +560,15 @@ describe('getPVC', () => {
     const editInfo = {
       servingRuntimeEditInfo: {
         servingRuntime: {
+          apiVersion: 'serving.kserve.io/v1alpha1',
+          kind: 'ServingRuntime',
+          metadata: {
+            name: 'test-runtime',
+            namespace: 'test-namespace',
+          },
           spec: {
-            volumes: [],
+            containers: [], // Required by ServingRuntimeKind
+            volumes: [], // No PVC volume here
           },
         },
       },
@@ -574,8 +581,15 @@ describe('getPVC', () => {
     const editInfo = {
       servingRuntimeEditInfo: {
         servingRuntime: {
+          apiVersion: 'serving.kserve.io/v1alpha1',
+          kind: 'ServingRuntime',
+          metadata: {
+            name: 'test-runtime',
+            namespace: 'test-namespace',
+          },
           spec: {
-            volumes: [{ persistentVolumeClaim: { claimName: 'test-pvc' } }],
+            containers: [],
+            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
           },
         },
       },
@@ -591,8 +605,15 @@ describe('getPVC', () => {
     const editInfo = {
       servingRuntimeEditInfo: {
         servingRuntime: {
+          apiVersion: 'serving.kserve.io/v1alpha1',
+          kind: 'ServingRuntime',
+          metadata: {
+            name: 'test-runtime',
+            namespace: 'test-namespace',
+          },
           spec: {
-            volumes: [{ persistentVolumeClaim: { claimName: 'test-pvc' } }],
+            containers: [],
+            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
           },
         },
       },
@@ -612,8 +633,15 @@ describe('getPVC', () => {
     const editInfo = {
       servingRuntimeEditInfo: {
         servingRuntime: {
+          apiVersion: 'serving.kserve.io/v1alpha1',
+          kind: 'ServingRuntime',
+          metadata: {
+            name: 'test-runtime',
+            namespace: 'test-namespace',
+          },
           spec: {
-            volumes: [{ persistentVolumeClaim: { claimName: pvcName } }],
+            containers: [],
+            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: pvcName } }],
           },
         },
       },
