@@ -440,7 +440,6 @@ describe('createNIMPVC', () => {
       },
       projectName,
       { dryRun },
-      true,
     );
     expect(result).toEqual(pvcMock);
   });
@@ -459,7 +458,6 @@ describe('createNIMPVC', () => {
       },
       projectName,
       { dryRun: dryRunFlag },
-      true,
     );
   });
 });
