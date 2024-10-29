@@ -259,9 +259,9 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       submitInferenceServiceResource({ dryRun: true }),
     ])
       .then(async () => {
-        const promises = [
-          submitServingRuntimeResources({ dryRun: false }),
-          submitInferenceServiceResource({ dryRun: false }),
+        const promises: Promise<void>[] = [
+          submitServingRuntimeResources({ dryRun: false }).then(() => undefined),
+          submitInferenceServiceResource({ dryRun: false }).then(() => undefined),
         ];
         if (!editInfo) {
           promises.push(
@@ -270,9 +270,11 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
             createNIMPVC(namespace, nimPVCName, pvcSize, false).then(() => undefined),
           );
         } else if (existingPvcSize !== pvcSize && existingPVC) {
-          promises.push(updatePvc(createData, existingPVC, namespace, { dryRun: false }));
+          promises.push(
+            updatePvc(createData, existingPVC, namespace, { dryRun: false }).then(() => undefined),
+          );
         }
-        return Promise.all(promises).then(() => undefined);
+        return Promise.all(promises);
       })
       .then(() => onSuccess())
       .catch((e) => {
