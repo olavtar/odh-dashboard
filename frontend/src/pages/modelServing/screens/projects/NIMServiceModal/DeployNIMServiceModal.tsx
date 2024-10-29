@@ -220,11 +220,12 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       editInfo?.inferenceServiceEditInfo?.spec.predictor.model?.runtime ||
       translateDisplayNameForK8s(createDataInferenceService.name, { safeK8sPrefix: 'nim-' });
 
-    const nimPVCName = getUniqueId('nim-pvc');
+    const nimPVCName = !editInfo ? getUniqueId('nim-pvc') : existingPVC?.metadata.name || 'nim-pvc';
 
-    const updatedServingRuntime = servingRuntimeSelected
-      ? updateServingRuntimeTemplate(servingRuntimeSelected, nimPVCName)
-      : undefined;
+    const updatedServingRuntime =
+      editInfo && servingRuntimeSelected
+        ? updateServingRuntimeTemplate(servingRuntimeSelected, nimPVCName)
+        : undefined;
 
     const submitServingRuntimeResources = getSubmitServingRuntimeResourcesFn(
       updatedServingRuntime,
@@ -268,7 +269,7 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
             createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false),
             createNIMPVC(namespace, nimPVCName, pvcSize, false),
           );
-        } else if (existingPvcSize !== pvcSize) {
+        } else if (existingPvcSize !== pvcSize && existingPVC) {
           promises.push(updatePvc(createData, existingPVC, namespace, false));
           // Delete and recreate the PVC if the size has changed
           // await deletePvc(nimPVCName, namespace); // Assuming deleteNIMPVC exists
