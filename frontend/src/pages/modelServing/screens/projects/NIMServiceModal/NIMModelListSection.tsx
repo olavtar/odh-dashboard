@@ -94,7 +94,7 @@ const NIMModelListSection: React.FC<NIMModelListSectionProps> = ({
           options.length === 0
             ? 'No NIM models available'
             : isEditing
-            ? inferenceServiceData.name
+            ? inferenceServiceData.format.name
             : 'Select NVIDIA NIM to deploy'
         }
         value={selectedModel}
