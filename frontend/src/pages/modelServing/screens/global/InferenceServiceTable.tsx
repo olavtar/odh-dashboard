@@ -10,7 +10,7 @@ import ResourceTr from '~/components/ResourceTr';
 import { fireFormTrackingEvent } from '~/concepts/analyticsTracking/segmentIOUtils';
 import { TrackingOutcome } from '~/concepts/analyticsTracking/trackingProperties';
 import { isProjectNIMSupported } from '~/pages/modelServing/screens/projects/nimUtils';
-import DeployNIMServiceModal from '~/pages/modelServing/screens/projects/NIMServiceModal/DeployNIMServiceModal';
+import ManageNIMServingModal from '~/pages/modelServing/screens/projects/NIMServiceModal/ManageNIMServingModal';
 import InferenceServiceTableRow from './InferenceServiceTableRow';
 import { getGlobalInferenceServiceColumns, getProjectInferenceServiceColumns } from './data';
 import DeleteInferenceServiceModal from './DeleteInferenceServiceModal';
@@ -57,6 +57,8 @@ const InferenceServiceTable: React.FC<InferenceServiceTableProps> = ({
 
     return getProjectInferenceServiceColumns();
   }, [getColumns, isGlobal, projects]);
+
+  const KServeManageModalComponent = isKServeNIMEnabled ? ManageNIMServingModal : ManageKServeModal;
 
   return (
     <>
@@ -124,45 +126,24 @@ const InferenceServiceTable: React.FC<InferenceServiceTableProps> = ({
         />
       ) : null}
       {!!editInferenceService && !isModelMesh(editInferenceService) ? (
-        isKServeNIMEnabled ? (
-          <DeployNIMServiceModal
-            editInfo={{
-              inferenceServiceEditInfo: editInferenceService,
-              servingRuntimeEditInfo: {
-                servingRuntime: servingRuntimes.find(
-                  (sr) => sr.metadata.name === editInferenceService.spec.predictor.model?.runtime,
-                ),
-                secrets: [],
-              },
-              secrets: filterTokens ? filterTokens(editInferenceService.metadata.name) : [],
-            }}
-            onClose={(edited) => {
-              if (edited) {
-                refresh?.();
-              }
-              setEditInferenceService(undefined);
-            }}
-          />
-        ) : (
-          <ManageKServeModal
-            editInfo={{
-              inferenceServiceEditInfo: editInferenceService,
-              servingRuntimeEditInfo: {
-                servingRuntime: servingRuntimes.find(
-                  (sr) => sr.metadata.name === editInferenceService.spec.predictor.model?.runtime,
-                ),
-                secrets: [],
-              },
-              secrets: filterTokens ? filterTokens(editInferenceService.metadata.name) : [],
-            }}
-            onClose={(edited) => {
-              if (edited) {
-                refresh?.();
-              }
-              setEditInferenceService(undefined);
-            }}
-          />
-        )
+        <KServeManageModalComponent
+          editInfo={{
+            inferenceServiceEditInfo: editInferenceService,
+            servingRuntimeEditInfo: {
+              servingRuntime: servingRuntimes.find(
+                (sr) => sr.metadata.name === editInferenceService.spec.predictor.model?.runtime,
+              ),
+              secrets: [],
+            },
+            secrets: filterTokens ? filterTokens(editInferenceService.metadata.name) : [],
+          }}
+          onClose={(edited) => {
+            if (edited) {
+              refresh?.();
+            }
+            setEditInferenceService(undefined);
+          }}
+        />
       ) : null}
     </>
   );

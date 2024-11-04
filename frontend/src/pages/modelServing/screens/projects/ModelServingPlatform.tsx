@@ -34,7 +34,7 @@ import { ProjectObjectType, typedEmptyImage } from '~/concepts/design/utils';
 import EmptyModelServingPlatform from '~/pages/modelServing/screens/projects/EmptyModelServingPlatform';
 import EmptyNIMModelServingCard from '~/pages/modelServing/screens/projects/EmptyNIMModelServingCard';
 import { isProjectNIMSupported } from '~/pages/modelServing/screens/projects/nimUtils';
-import DeployNIMServiceModal from '~/pages/modelServing/screens/projects/NIMServiceModal/DeployNIMServiceModal';
+import ManageNIMServingModal from '~/pages/modelServing/screens/projects/NIMServiceModal/ManageNIMServingModal';
 import { useDashboardNamespace } from '~/redux/selectors';
 import { useIsNIMAvailable } from '~/pages/modelServing/screens/projects/useIsNIMAvailable';
 import ManageServingRuntimeModal from './ServingRuntimeModal/ManageServingRuntimeModal';
@@ -151,7 +151,7 @@ const ModelServingPlatform: React.FC = () => {
 
     if (isKServeNIMEnabled) {
       return (
-        <DeployNIMServiceModal
+        <ManageNIMServingModal
           projectContext={{ currentProject, dataConnections }}
           onClose={onSubmit}
         />

@@ -546,70 +546,59 @@ describe('getPVC', () => {
   });
 
   it('returns undefined if servingRuntimeEditInfo or servingRuntime is missing', async () => {
-    const result = await getPVC(namespace, {}); // No editInfo
+    const result = await getPVC(namespace, undefined);
     expect(result).toBeUndefined();
   });
 
   it('returns undefined if pvcName cannot be found in volumes', async () => {
-    const editInfo = {
-      servingRuntimeEditInfo: {
-        servingRuntime: {
-          apiVersion: 'serving.kserve.io/v1alpha1',
-          kind: 'ServingRuntime',
-          metadata: {
-            name: 'test-runtime',
-            namespace: 'test-namespace',
-          },
-          spec: {
-            containers: [], // Required by ServingRuntimeKind
-            volumes: [], // No PVC volume here
-          },
-        },
+    const servingRuntimeEditInfo: ServingRuntimeKind = {
+      apiVersion: 'serving.kserve.io/v1alpha1',
+      kind: 'ServingRuntime',
+      metadata: {
+        name: 'test-runtime',
+        namespace: 'test-namespace',
+      },
+      spec: {
+        containers: [], // Required by ServingRuntimeKind
+        volumes: [], // No PVC volume here
       },
     };
-    const result = await getPVC(namespace, editInfo);
+
+    const result = await getPVC(namespace, servingRuntimeEditInfo);
     expect(result).toBeUndefined();
   });
 
   it('returns undefined if getDashboardPvcs returns an empty array', async () => {
-    const editInfo = {
-      servingRuntimeEditInfo: {
-        servingRuntime: {
-          apiVersion: 'serving.kserve.io/v1alpha1',
-          kind: 'ServingRuntime',
-          metadata: {
-            name: 'test-runtime',
-            namespace: 'test-namespace',
-          },
-          spec: {
-            containers: [],
-            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
-          },
-        },
+    const servingRuntimeEditInfo: ServingRuntimeKind = {
+      apiVersion: 'serving.kserve.io/v1alpha1',
+      kind: 'ServingRuntime',
+      metadata: {
+        name: 'test-runtime',
+        namespace: 'test-namespace',
+      },
+      spec: {
+        containers: [],
+        volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
       },
     };
 
     mockedGetDashboardPvcs.mockResolvedValue([]); // Simulate empty PVC list
-    const result = await getPVC(namespace, editInfo);
+    const result = await getPVC(namespace, servingRuntimeEditInfo);
     expect(result).toBeUndefined();
     expect(mockedGetDashboardPvcs).toHaveBeenCalledWith(namespace);
   });
 
   it('returns undefined if the specific PVC is not found in getDashboardPvcs result', async () => {
-    const editInfo = {
-      servingRuntimeEditInfo: {
-        servingRuntime: {
-          apiVersion: 'serving.kserve.io/v1alpha1',
-          kind: 'ServingRuntime',
-          metadata: {
-            name: 'test-runtime',
-            namespace: 'test-namespace',
-          },
-          spec: {
-            containers: [],
-            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
-          },
-        },
+    const servingRuntimeEditInfo: ServingRuntimeKind = {
+      apiVersion: 'serving.kserve.io/v1alpha1',
+      kind: 'ServingRuntime',
+      metadata: {
+        name: 'test-runtime',
+        namespace: 'test-namespace',
+      },
+      spec: {
+        containers: [],
+        volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: 'test-pvc' } }],
       },
     };
 
@@ -617,27 +606,23 @@ describe('getPVC', () => {
       { metadata: { name: 'other-pvc' } } as PersistentVolumeClaimKind, // Different PVC
     ]);
 
-    const result = await getPVC(namespace, editInfo);
+    const result = await getPVC(namespace, servingRuntimeEditInfo);
     expect(result).toBeUndefined();
     expect(mockedGetDashboardPvcs).toHaveBeenCalledWith(namespace);
   });
 
   it('returns the correct PVC if found', async () => {
     const pvcName = 'test-pvc';
-    const editInfo = {
-      servingRuntimeEditInfo: {
-        servingRuntime: {
-          apiVersion: 'serving.kserve.io/v1alpha1',
-          kind: 'ServingRuntime',
-          metadata: {
-            name: 'test-runtime',
-            namespace: 'test-namespace',
-          },
-          spec: {
-            containers: [],
-            volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: pvcName } }],
-          },
-        },
+    const servingRuntimeEditInfo: ServingRuntimeKind = {
+      apiVersion: 'serving.kserve.io/v1alpha1',
+      kind: 'ServingRuntime',
+      metadata: {
+        name: 'test-runtime',
+        namespace: 'test-namespace',
+      },
+      spec: {
+        containers: [],
+        volumes: [{ name: 'volume1', persistentVolumeClaim: { claimName: pvcName } }],
       },
     };
 
@@ -648,7 +633,7 @@ describe('getPVC', () => {
 
     mockedGetDashboardPvcs.mockResolvedValue([targetPVC]);
 
-    const result = await getPVC(namespace, editInfo);
+    const result = await getPVC(namespace, servingRuntimeEditInfo);
     expect(result).toEqual(targetPVC);
     expect(mockedGetDashboardPvcs).toHaveBeenCalledWith(namespace);
   });

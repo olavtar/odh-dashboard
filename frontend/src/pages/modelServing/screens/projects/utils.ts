@@ -41,11 +41,12 @@ import {
   createPvc,
   createSecret,
   createServingRuntime,
+  getDashboardPvcs,
   updateInferenceService,
   updateServingRuntime,
 } from '~/api';
 import { isDataConnectionAWS } from '~/pages/projects/screens/detail/data-connections/utils';
-import { containsOnlySlashes, isS3PathValid, removeLeadingSlash } from '~/utilities/string';
+import { removeLeadingSlash } from '~/utilities/string';
 import { RegisteredModelDeployInfo } from '~/pages/modelRegistry/screens/RegisteredModels/useRegisteredModelDeployInfo';
 import {
   getNGCSecretType,
@@ -135,6 +136,8 @@ export const useCreateServingRuntimeObject = (existingData?: {
 
   const existingTokens = useDeepCompareMemoize(getServingRuntimeTokens(existingData?.secrets));
 
+  const existingImageName = existingData?.servingRuntime?.spec.containers[0].image;
+
   React.useEffect(() => {
     if (existingServingRuntimeName) {
       setCreateData('name', existingServingRuntimeName);
@@ -144,6 +147,7 @@ export const useCreateServingRuntimeObject = (existingData?: {
       setCreateData('externalRoute', existingExternalRoute);
       setCreateData('tokenAuth', existingTokenAuth);
       setCreateData('tokens', existingTokens);
+      setCreateData('imageName', existingImageName);
     }
   }, [
     existingServingRuntimeName,
@@ -155,6 +159,7 @@ export const useCreateServingRuntimeObject = (existingData?: {
     existingTokens,
     setCreateData,
     sizes,
+    existingImageName,
   ]);
   return [...createModelState, sizes];
 };
@@ -181,8 +186,6 @@ export const defaultInferenceService: CreatingInferenceServiceObject = {
   externalRoute: false,
   tokenAuth: false,
   tokens: [],
-  servingRuntimeArgs: [],
-  servingRuntimeEnvVars: [],
 };
 
 export const useCreateInferenceServiceObject = (
@@ -212,8 +215,6 @@ export const useCreateInferenceServiceObject = (
     '';
   const existingStorage =
     useDeepCompareMemoize(existingData?.spec.predictor.model?.storage) || undefined;
-  const existingUri =
-    useDeepCompareMemoize(existingData?.spec.predictor.model?.storageUri) || undefined;
   const existingServingRuntime = existingData?.spec.predictor.model?.runtime || '';
   const existingProject = existingData?.metadata.namespace || '';
   const existingFormat =
@@ -233,10 +234,6 @@ export const useCreateInferenceServiceObject = (
     getInferenceServiceSize(sizes, existingData, existingServingRuntimeData),
   );
 
-  const existingServingRuntimeArgs = existingData?.spec.predictor.model?.args;
-
-  const existingServingRuntimeEnvVars = existingData?.spec.predictor.model?.env;
-
   React.useEffect(() => {
     if (existingName) {
       setCreateData('name', existingName);
@@ -244,12 +241,9 @@ export const useCreateInferenceServiceObject = (
       setCreateData('project', existingProject);
       setCreateData('modelSize', existingSize);
       setCreateData('storage', {
-        type: existingUri
-          ? InferenceServiceStorageType.EXISTING_URI
-          : InferenceServiceStorageType.EXISTING_STORAGE,
+        type: InferenceServiceStorageType.EXISTING_STORAGE,
         path: existingStorage?.path || '',
         dataConnection: existingStorage?.key || '',
-        uri: existingUri || '',
         awsData: EMPTY_AWS_SECRET_DATA,
       });
       setCreateData(
@@ -263,13 +257,10 @@ export const useCreateInferenceServiceObject = (
       setCreateData('externalRoute', existingExternalRoute);
       setCreateData('tokenAuth', existingTokenAuth);
       setCreateData('tokens', existingTokens);
-      setCreateData('servingRuntimeArgs', existingServingRuntimeArgs);
-      setCreateData('servingRuntimeEnvVars', existingServingRuntimeEnvVars);
     }
   }, [
     existingName,
     existingStorage,
-    existingUri,
     existingFormat,
     existingSize,
     existingServingRuntime,
@@ -280,8 +271,6 @@ export const useCreateInferenceServiceObject = (
     existingExternalRoute,
     existingTokenAuth,
     existingTokens,
-    existingServingRuntimeArgs,
-    existingServingRuntimeEnvVars,
   ]);
 
   return [...createInferenceServiceState, sizes];
@@ -339,6 +328,7 @@ export const createAWSSecret = (
 
 const createInferenceServiceAndDataConnection = async (
   inferenceServiceData: CreatingInferenceServiceObject,
+  existingStorage: boolean,
   editInfo?: InferenceServiceKind,
   isModelMesh?: boolean,
   initialAcceleratorProfile?: AcceleratorProfileState,
@@ -431,12 +421,16 @@ export const getSubmitInferenceServiceResourceFn = (
     },
   };
 
+  const existingStorage =
+    inferenceServiceData.storage.type === InferenceServiceStorageType.EXISTING_STORAGE;
+
   const createTokenAuth = createData.tokenAuth && !!allowCreate;
   const inferenceServiceName = translateDisplayNameForK8s(inferenceServiceData.name);
 
   return ({ dryRun = false }) =>
     createInferenceServiceAndDataConnection(
       inferenceServiceData,
+      existingStorage,
       editInfo,
       isModelMesh,
       initialAcceleratorProfile,
@@ -680,7 +674,6 @@ export const createNIMPVC = (
     {
       dryRun,
     },
-    true,
   );
 
 export const getCreateInferenceServiceLabels = (
@@ -703,5 +696,29 @@ export const getCreateInferenceServiceLabels = (
   return undefined;
 };
 
-export const isConnectionPathValid = (path: string): boolean =>
-  !(containsOnlySlashes(path) || !isS3PathValid(path) || path === '');
+export const getPVC = async (
+  namespace: string,
+  servingRuntimeEditInfo?: ServingRuntimeKind,
+): Promise<PersistentVolumeClaimKind | undefined> => {
+  if (!servingRuntimeEditInfo) {
+    return undefined;
+  }
+
+  try {
+    const pvcName = servingRuntimeEditInfo.spec.volumes?.find(
+      (vol) => vol.persistentVolumeClaim?.claimName,
+    )?.persistentVolumeClaim?.claimName;
+
+    if (!pvcName) {
+      return undefined;
+    }
+
+    const pvcs = await getDashboardPvcs(namespace);
+    // Find and return the specific PVC by name
+    const targetPvc = pvcs.find((item) => item.metadata.name === pvcName);
+
+    return targetPvc || undefined;
+  } catch (error) {
+    return undefined;
+  }
+};
