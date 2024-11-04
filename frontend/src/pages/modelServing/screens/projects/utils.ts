@@ -676,3 +676,4 @@ export const getCreateInferenceServiceLabels = (
 
 export const isConnectionPathValid = (path: string): boolean =>
   !(containsOnlySlashes(path) || !isS3PathValid(path) || path === '');
+

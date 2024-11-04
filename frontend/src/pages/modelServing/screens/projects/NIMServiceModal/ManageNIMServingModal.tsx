@@ -49,7 +49,6 @@ import {
 } from '~/pages/modelServing/screens/projects/nimUtils';
 import { useDashboardNamespace } from '~/redux/selectors';
 import { getServingRuntimeFromTemplate } from '~/pages/modelServing/customServingRuntimes/utils';
-import { useCreateStorageObjectForNotebook } from '~/pages/projects/screens/spawner/storage/utils';
 import { usePVCSize } from '~/pages/modelServing/screens/projects/usePvcSize';
 
 const NIM_SECRET_NAME = 'nvidia-nim-secrets';
@@ -124,23 +123,17 @@ const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
   const [actionInProgress, setActionInProgress] = React.useState(false);
   const [error, setError] = React.useState<Error | undefined>();
   const [alertVisible, setAlertVisible] = React.useState(true);
-  const { pvcSize, setPvcSize, existingPvcSize, existingPVC } = usePVCSize(
+  const { pvcSize, setPvcSize, existingPvcSize, existingPVC, createData } = usePVCSize(
     projectContext?.currentProject.metadata.name,
     editInfo?.inferenceServiceEditInfo,
     editInfo?.servingRuntimeEditInfo?.servingRuntime,
   );
-
-  const [createData, setCreateData, resetData] = useCreateStorageObjectForNotebook(existingPVC);
 
   React.useEffect(() => {
     if (currentProjectName) {
       setCreateDataInferenceService('project', currentProjectName);
     }
   }, [currentProjectName, setCreateDataInferenceService]);
-
-  React.useEffect(() => {
-    setCreateData('size', pvcSize);
-  }, [pvcSize, setCreateData]);
 
   // Serving Runtime Validation
   const isDisabledServingRuntime =
@@ -181,7 +174,6 @@ const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
     resetDataInferenceService();
     resetSelectedAcceleratorProfile();
     setAlertVisible(true);
-    resetData();
   };
 
   const setErrorModal = (e: Error) => {
@@ -250,7 +242,7 @@ const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
             createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false).then(() => undefined),
             createNIMPVC(namespace, nimPVCName, pvcSize, false).then(() => undefined),
           );
-        } else if (existingPvcSize !== pvcSize && existingPVC) {
+        } else if (existingPvcSize !== pvcSize && existingPVC && createData) {
           promises.push(
             updatePvc(createData, existingPVC, namespace, { dryRun: false }).then(() => undefined),
           );
