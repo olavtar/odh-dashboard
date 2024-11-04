@@ -135,6 +135,8 @@ export const useCreateServingRuntimeObject = (existingData?: {
 
   const existingTokens = useDeepCompareMemoize(getServingRuntimeTokens(existingData?.secrets));
 
+  const existingImageName = existingData?.servingRuntime?.spec.containers[0].image;
+
   React.useEffect(() => {
     if (existingServingRuntimeName) {
       setCreateData('name', existingServingRuntimeName);
@@ -144,6 +146,7 @@ export const useCreateServingRuntimeObject = (existingData?: {
       setCreateData('externalRoute', existingExternalRoute);
       setCreateData('tokenAuth', existingTokenAuth);
       setCreateData('tokens', existingTokens);
+      setCreateData('imageName', existingImageName);
     }
   }, [
     existingServingRuntimeName,
@@ -155,6 +158,7 @@ export const useCreateServingRuntimeObject = (existingData?: {
     existingTokens,
     setCreateData,
     sizes,
+    existingImageName,
   ]);
   return [...createModelState, sizes];
 };
@@ -212,8 +216,6 @@ export const useCreateInferenceServiceObject = (
     '';
   const existingStorage =
     useDeepCompareMemoize(existingData?.spec.predictor.model?.storage) || undefined;
-  const existingUri =
-    useDeepCompareMemoize(existingData?.spec.predictor.model?.storageUri) || undefined;
   const existingServingRuntime = existingData?.spec.predictor.model?.runtime || '';
   const existingProject = existingData?.metadata.namespace || '';
   const existingFormat =
@@ -233,10 +235,6 @@ export const useCreateInferenceServiceObject = (
     getInferenceServiceSize(sizes, existingData, existingServingRuntimeData),
   );
 
-  const existingServingRuntimeArgs = existingData?.spec.predictor.model?.args;
-
-  const existingServingRuntimeEnvVars = existingData?.spec.predictor.model?.env;
-
   React.useEffect(() => {
     if (existingName) {
       setCreateData('name', existingName);
@@ -244,12 +242,9 @@ export const useCreateInferenceServiceObject = (
       setCreateData('project', existingProject);
       setCreateData('modelSize', existingSize);
       setCreateData('storage', {
-        type: existingUri
-          ? InferenceServiceStorageType.EXISTING_URI
-          : InferenceServiceStorageType.EXISTING_STORAGE,
+        type: InferenceServiceStorageType.EXISTING_STORAGE,
         path: existingStorage?.path || '',
         dataConnection: existingStorage?.key || '',
-        uri: existingUri || '',
         awsData: EMPTY_AWS_SECRET_DATA,
       });
       setCreateData(
@@ -263,13 +258,10 @@ export const useCreateInferenceServiceObject = (
       setCreateData('externalRoute', existingExternalRoute);
       setCreateData('tokenAuth', existingTokenAuth);
       setCreateData('tokens', existingTokens);
-      setCreateData('servingRuntimeArgs', existingServingRuntimeArgs);
-      setCreateData('servingRuntimeEnvVars', existingServingRuntimeEnvVars);
     }
   }, [
     existingName,
     existingStorage,
-    existingUri,
     existingFormat,
     existingSize,
     existingServingRuntime,
@@ -280,8 +272,6 @@ export const useCreateInferenceServiceObject = (
     existingExternalRoute,
     existingTokenAuth,
     existingTokens,
-    existingServingRuntimeArgs,
-    existingServingRuntimeEnvVars,
   ]);
 
   return [...createInferenceServiceState, sizes];
@@ -339,6 +329,7 @@ export const createAWSSecret = (
 
 const createInferenceServiceAndDataConnection = async (
   inferenceServiceData: CreatingInferenceServiceObject,
+  existingStorage: boolean,
   editInfo?: InferenceServiceKind,
   isModelMesh?: boolean,
   initialAcceleratorProfile?: AcceleratorProfileState,
@@ -348,36 +339,18 @@ const createInferenceServiceAndDataConnection = async (
   connection?: Connection,
 ) => {
   let secret;
-  let storageUri;
-  if (inferenceServiceData.storage.type === InferenceServiceStorageType.NEW_STORAGE) {
+  if (!existingStorage) {
     if (connection) {
       secret = await createSecret(connection, { dryRun });
-      if (connection.stringData?.URI) {
-        storageUri = connection.stringData.URI;
-      }
     } else {
       secret = await createAWSSecret(inferenceServiceData, dryRun);
     }
-  }
-  if (inferenceServiceData.storage.type === InferenceServiceStorageType.EXISTING_STORAGE) {
-    if (connection?.data?.URI) {
-      storageUri = window.atob(connection.data.URI);
-    }
-  }
-  if (inferenceServiceData.storage.type === InferenceServiceStorageType.EXISTING_URI) {
-    storageUri = inferenceServiceData.storage.uri;
   }
 
   let inferenceService;
   if (editInfo) {
     inferenceService = await updateInferenceService(
-      {
-        ...inferenceServiceData,
-        storage: {
-          ...inferenceServiceData.storage,
-          uri: storageUri,
-        },
-      },
+      inferenceServiceData,
       editInfo,
       secret?.metadata.name,
       isModelMesh,
@@ -388,13 +361,7 @@ const createInferenceServiceAndDataConnection = async (
     );
   } else {
     inferenceService = await createInferenceService(
-      {
-        ...inferenceServiceData,
-        storage: {
-          ...inferenceServiceData.storage,
-          uri: storageUri,
-        },
-      },
+      inferenceServiceData,
       secret?.metadata.name,
       isModelMesh,
       initialAcceleratorProfile,
@@ -431,12 +398,16 @@ export const getSubmitInferenceServiceResourceFn = (
     },
   };
 
+  const existingStorage =
+    inferenceServiceData.storage.type === InferenceServiceStorageType.EXISTING_STORAGE;
+
   const createTokenAuth = createData.tokenAuth && !!allowCreate;
   const inferenceServiceName = translateDisplayNameForK8s(inferenceServiceData.name);
 
   return ({ dryRun = false }) =>
     createInferenceServiceAndDataConnection(
       inferenceServiceData,
+      existingStorage,
       editInfo,
       isModelMesh,
       initialAcceleratorProfile,

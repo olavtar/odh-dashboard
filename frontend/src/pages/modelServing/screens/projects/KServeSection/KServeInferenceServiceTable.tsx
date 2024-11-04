@@ -11,7 +11,7 @@ import { fireFormTrackingEvent } from '~/concepts/analyticsTracking/segmentIOUti
 import { TrackingOutcome } from '~/concepts/analyticsTracking/trackingProperties';
 import { byName, ProjectsContext } from '~/concepts/projects/ProjectsContext';
 import { isProjectNIMSupported } from '~/pages/modelServing/screens/projects/nimUtils';
-import DeployNIMServiceModal from '~/pages/modelServing/screens/projects/NIMServiceModal/DeployNIMServiceModal';
+import ManageNIMServingModal from '~/pages/modelServing/screens/projects/NIMServiceModal/ManageNIMServingModal';
 
 const KServeInferenceServiceTable: React.FC = () => {
   const { projects } = React.useContext(ProjectsContext);
@@ -42,20 +42,7 @@ const KServeInferenceServiceTable: React.FC = () => {
   } = React.useContext(ProjectDetailsContext);
   const columns = getKServeInferenceServiceColumns();
 
-  const closeModal = () => {
-    setEditKServeResources(undefined);
-    setDeleteKServeResources(undefined);
-  };
-
-  const handleModalClose = (submit: boolean) => {
-    closeModal();
-    if (submit) {
-      refreshServingRuntime();
-      refreshInferenceServices();
-      refreshDataConnections();
-      refreshServerSecrets();
-    }
-  };
+  const KServeManageModalComponent = isKServeNIMEnabled ? ManageNIMServingModal : ManageKServeModal;
 
   return (
     <>
@@ -93,32 +80,27 @@ const KServeInferenceServiceTable: React.FC = () => {
           }}
         />
       ) : null}
-      {editKserveResources &&
-        (isKServeNIMEnabled ? (
-          <DeployNIMServiceModal
-            editInfo={{
-              servingRuntimeEditInfo: {
-                servingRuntime: editKserveResources.servingRuntime,
-                secrets: [],
-              },
-              inferenceServiceEditInfo: editKserveResources.inferenceService,
-              secrets: filterTokens(editKserveResources.inferenceService.metadata.name),
-            }}
-            onClose={handleModalClose}
-          />
-        ) : (
-          <ManageKServeModal
-            editInfo={{
-              servingRuntimeEditInfo: {
-                servingRuntime: editKserveResources.servingRuntime,
-                secrets: [],
-              },
-              inferenceServiceEditInfo: editKserveResources.inferenceService,
-              secrets: filterTokens(editKserveResources.inferenceService.metadata.name),
-            }}
-            onClose={handleModalClose}
-          />
-        ))}
+      {editKserveResources ? (
+        <KServeManageModalComponent
+          editInfo={{
+            servingRuntimeEditInfo: {
+              servingRuntime: editKserveResources.servingRuntime,
+              secrets: [],
+            },
+            inferenceServiceEditInfo: editKserveResources.inferenceService,
+            secrets: filterTokens(editKserveResources.inferenceService.metadata.name),
+          }}
+          onClose={(submit: boolean) => {
+            setEditKServeResources(undefined);
+            if (submit) {
+              refreshServingRuntime();
+              refreshInferenceServices();
+              refreshDataConnections();
+              refreshServerSecrets();
+            }
+          }}
+        />
+      ) : null}
     </>
   );
 };

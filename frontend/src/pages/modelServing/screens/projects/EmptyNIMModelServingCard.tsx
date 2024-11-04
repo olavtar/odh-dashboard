@@ -15,7 +15,7 @@ import {
   getTemplateEnabled,
 } from '~/pages/modelServing/customServingRuntimes/utils';
 import ModelServingPlatformButtonAction from '~/pages/modelServing/screens/projects/ModelServingPlatformButtonAction';
-import DeployNIMServiceModal from './NIMServiceModal/DeployNIMServiceModal';
+import ManageNIMServingModal from './NIMServiceModal/ManageNIMServingModal';
 
 const EmptyNIMModelServingCard: React.FC = () => {
   const {
@@ -80,7 +80,7 @@ const EmptyNIMModelServingCard: React.FC = () => {
         </CardFooter>
       </Card>
       {open && (
-        <DeployNIMServiceModal
+        <ManageNIMServingModal
           projectContext={{
             currentProject,
             dataConnections,

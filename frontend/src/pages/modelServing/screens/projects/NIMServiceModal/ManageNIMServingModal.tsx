@@ -12,7 +12,6 @@ import { EitherOrNone } from '@openshift/dynamic-plugin-sdk';
 import {
   createNIMPVC,
   createNIMSecret,
-  getPVC,
   getSubmitInferenceServiceResourceFn,
   getSubmitServingRuntimeResourcesFn,
   useCreateInferenceServiceObject,
@@ -21,7 +20,6 @@ import {
 import {
   AccessReviewResourceAttributes,
   InferenceServiceKind,
-  PersistentVolumeClaimKind,
   ProjectKind,
   SecretKind,
   ServingRuntimeKind,
@@ -52,6 +50,7 @@ import {
 import { useDashboardNamespace } from '~/redux/selectors';
 import { getServingRuntimeFromTemplate } from '~/pages/modelServing/customServingRuntimes/utils';
 import { useCreateStorageObjectForNotebook } from '~/pages/projects/screens/spawner/storage/utils';
+import { usePVCSize } from '~/pages/modelServing/screens/projects/usePvcSize';
 
 const NIM_SECRET_NAME = 'nvidia-nim-secrets';
 const NIM_NGC_SECRET_NAME = 'ngc-secret';
@@ -62,7 +61,7 @@ const accessReviewResource: AccessReviewResourceAttributes = {
   verb: 'create',
 };
 
-type DeployNIMServiceModalProps = {
+type ManageNIMServingModalProps = {
   onClose: (submit: boolean) => void;
 } & EitherOrNone<
   {
@@ -80,7 +79,7 @@ type DeployNIMServiceModalProps = {
   }
 >;
 
-const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
+const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
   onClose,
   projectContext,
   editInfo,
@@ -125,9 +124,12 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   const [actionInProgress, setActionInProgress] = React.useState(false);
   const [error, setError] = React.useState<Error | undefined>();
   const [alertVisible, setAlertVisible] = React.useState(true);
-  const [pvcSize, setPvcSize] = React.useState<string>('30Gi');
-  const [existingPvcSize, setExistingPvcSize] = React.useState<string | null>(null);
-  const [existingPVC, setExistingPVC] = React.useState<PersistentVolumeClaimKind | undefined>();
+  const { pvcSize, setPvcSize, existingPvcSize, existingPVC } = usePVCSize(
+    projectContext?.currentProject.metadata.name,
+    editInfo?.inferenceServiceEditInfo,
+    editInfo?.servingRuntimeEditInfo?.servingRuntime,
+  );
+
   const [createData, setCreateData, resetData] = useCreateStorageObjectForNotebook(existingPVC);
 
   React.useEffect(() => {
@@ -137,32 +139,12 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   }, [currentProjectName, setCreateDataInferenceService]);
 
   React.useEffect(() => {
-    const fetchPVCSize = async () => {
-      if (editInfo && editInfo.inferenceServiceEditInfo?.metadata.namespace) {
-        const pvcData = await getPVC(
-          editInfo.inferenceServiceEditInfo.metadata.namespace,
-          editInfo,
-        );
-        if (pvcData) {
-          setExistingPVC(pvcData);
-          const size = pvcData.spec.resources.requests.storage;
-          if (size) {
-            setExistingPvcSize(size);
-            setPvcSize(size);
-          }
-        }
-      }
-    };
-
-    fetchPVCSize();
-  }, [namespace, editInfo]);
-
-  React.useEffect(() => {
     setCreateData('size', pvcSize);
   }, [pvcSize, setCreateData]);
 
   // Serving Runtime Validation
-  const isDisabledServingRuntime = namespace === '' || actionInProgress;
+  const isDisabledServingRuntime =
+    namespace === '' || actionInProgress || createDataServingRuntime.imageName === undefined;
 
   const baseInputValueValid =
     createDataServingRuntime.numReplicas >= 0 &&
@@ -179,11 +161,16 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   const { dashboardNamespace } = useDashboardNamespace();
 
   React.useEffect(() => {
-    const fetchNIMServingRuntimeTemplate = async () => {
-      const nimTemplate = await getNIMServingRuntimeTemplate(dashboardNamespace);
-      setServingRuntimeSelected(getServingRuntimeFromTemplate(nimTemplate));
-    };
-    fetchNIMServingRuntimeTemplate();
+    if (editInfo?.servingRuntimeEditInfo?.servingRuntime) {
+      setServingRuntimeSelected(editInfo.servingRuntimeEditInfo.servingRuntime);
+    } else {
+      const fetchNIMServingRuntimeTemplate = async () => {
+        const nimTemplate = await getNIMServingRuntimeTemplate(dashboardNamespace);
+        setServingRuntimeSelected(getServingRuntimeFromTemplate(nimTemplate));
+      };
+
+      fetchNIMServingRuntimeTemplate();
+    }
   }, [dashboardNamespace, editInfo]);
 
   const onBeforeClose = (submitted: boolean) => {
@@ -215,14 +202,14 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
       editInfo?.inferenceServiceEditInfo?.spec.predictor.model?.runtime ||
       translateDisplayNameForK8s(createDataInferenceService.name, { safeK8sPrefix: 'nim-' });
 
-    const nimPVCName = !editInfo ? getUniqueId('nim-pvc') : existingPVC?.metadata.name || 'nim-pvc';
-
-    const updatedServingRuntime = servingRuntimeSelected
-      ? updateServingRuntimeTemplate(servingRuntimeSelected, nimPVCName)
-      : undefined;
+    const nimPVCName = getUniqueId('nim-pvc');
+    const finalServingRuntime =
+      !editInfo && servingRuntimeSelected
+        ? updateServingRuntimeTemplate(servingRuntimeSelected, nimPVCName)
+        : servingRuntimeSelected;
 
     const submitServingRuntimeResources = getSubmitServingRuntimeResourcesFn(
-      updatedServingRuntime,
+      finalServingRuntime,
       createDataServingRuntime,
       customServingRuntimesEnabled,
       namespace,
@@ -376,4 +363,4 @@ const DeployNIMServiceModal: React.FC<DeployNIMServiceModalProps> = ({
   );
 };
 
-export default DeployNIMServiceModal;
+export default ManageNIMServingModal;
