@@ -42,6 +42,7 @@ import {
   createSecret,
   createServingRuntime,
   getDashboardPvcs,
+  getInferenceServiceContext,
   updateInferenceService,
   updateServingRuntime,
 } from '~/api';
@@ -720,5 +721,14 @@ export const getPVC = async (
     return targetPvc || undefined;
   } catch (error) {
     return undefined;
+  }
+};
+
+export const fetchInferenceServiceCount = async (namespace: string): Promise<number> => {
+  try {
+    const inferenceServices = await getInferenceServiceContext(namespace);
+    return inferenceServices.length;
+  } catch (error) {
+    return 0;
   }
 };
