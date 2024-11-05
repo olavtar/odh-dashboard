@@ -651,7 +651,7 @@ export const createNIMPVC = (
     {
       dryRun,
     },
-    true,
+    false,
   );
 
 export const getCreateInferenceServiceLabels = (

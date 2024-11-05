@@ -33,7 +33,11 @@ import ServingRuntimeSizeSection from '~/pages/modelServing/screens/projects/Ser
 import NIMModelListSection from '~/pages/modelServing/screens/projects/NIMServiceModal/NIMModelListSection';
 import NIMModelDeploymentNameSection from '~/pages/modelServing/screens/projects/NIMServiceModal/NIMModelDeploymentNameSection';
 import ProjectSection from '~/pages/modelServing/screens/projects/InferenceServiceModal/ProjectSection';
-import { DataConnection, NamespaceApplicationCase } from '~/pages/projects/types';
+import {
+  CreatingStorageObject,
+  DataConnection,
+  NamespaceApplicationCase,
+} from '~/pages/projects/types';
 import {
   getDisplayNameFromK8sResource,
   translateDisplayNameForK8s,
@@ -49,7 +53,7 @@ import {
 } from '~/pages/modelServing/screens/projects/nimUtils';
 import { useDashboardNamespace } from '~/redux/selectors';
 import { getServingRuntimeFromTemplate } from '~/pages/modelServing/customServingRuntimes/utils';
-import { usePVCSize } from '~/pages/modelServing/screens/projects/usePvcSize';
+import { useNIMPVC } from '~/pages/modelServing/screens/projects/NIMServiceModal/useNIMPVC';
 
 const NIM_SECRET_NAME = 'nvidia-nim-secrets';
 const NIM_NGC_SECRET_NAME = 'ngc-secret';
@@ -123,9 +127,8 @@ const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
   const [actionInProgress, setActionInProgress] = React.useState(false);
   const [error, setError] = React.useState<Error | undefined>();
   const [alertVisible, setAlertVisible] = React.useState(true);
-  const { pvcSize, setPvcSize, existingPvcSize, existingPVC, createData } = usePVCSize(
-    projectContext?.currentProject.metadata.name,
-    editInfo?.inferenceServiceEditInfo,
+  const { pvcSize, setPvcSize, pvc } = useNIMPVC(
+    editInfo?.inferenceServiceEditInfo?.metadata.namespace,
     editInfo?.servingRuntimeEditInfo?.servingRuntime,
   );
 
@@ -242,9 +245,17 @@ const ManageNIMServingModal: React.FC<ManageNIMServingModalProps> = ({
             createNIMSecret(namespace, NIM_NGC_SECRET_NAME, true, false).then(() => undefined),
             createNIMPVC(namespace, nimPVCName, pvcSize, false).then(() => undefined),
           );
-        } else if (existingPvcSize !== pvcSize && existingPVC && createData) {
+        } else if (pvc && pvc.spec.resources.requests.storage !== pvcSize) {
+          const createData: CreatingStorageObject = {
+            size: pvcSize, // New size
+            nameDesc: {
+              name: pvc.metadata.name,
+              description: pvc.metadata.annotations?.description || '',
+            },
+            storageClassName: pvc.spec.storageClassName,
+          };
           promises.push(
-            updatePvc(createData, existingPVC, namespace, { dryRun: false }).then(() => undefined),
+            updatePvc(createData, pvc, namespace, { dryRun: false }).then(() => undefined),
           );
         }
         return Promise.all(promises);
