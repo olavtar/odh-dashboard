@@ -12,7 +12,7 @@ import {
 import { getProjectModelServingPlatform } from '~/pages/modelServing/screens/projects/utils';
 import ManageServingRuntimeModal from '~/pages/modelServing/screens/projects/ServingRuntimeModal/ManageServingRuntimeModal';
 import ManageKServeModal from '~/pages/modelServing/screens/projects/kServeModal/ManageKServeModal';
-import DeployNIMServiceModal from '~/pages/modelServing/screens/projects/NIMServiceModal/DeployNIMServiceModal';
+import ManageNIMServingModal from '~/pages/modelServing/screens/projects/NIMServiceModal/ManageNIMServingModal';
 
 type AddModelFooterProps = {
   selectedPlatform?: ServingRuntimePlatform;
@@ -88,7 +88,7 @@ const AddModelFooter: React.FC<AddModelFooterProps> = ({ selectedPlatform, isNIM
         />
       ) : null}
       {modalShown && isNIM ? (
-        <DeployNIMServiceModal
+        <ManageNIMServingModal
           projectContext={{ currentProject, dataConnections }}
           onClose={onSubmit}
         />
