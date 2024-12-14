@@ -115,7 +115,7 @@ type PlatformStatus = {
 };
 export type ServingPlatformStatuses = {
   kServe: PlatformStatus;
-  kServeNIM: PlatformStatus;
+  kServeNIM: PlatformStatus & { isLoaded: boolean };
   modelMesh: PlatformStatus;
   platformEnabledCount: number;
 };
